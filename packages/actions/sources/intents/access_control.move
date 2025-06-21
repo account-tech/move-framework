@@ -2,6 +2,10 @@ module account_actions::access_control_intents;
 
 // === Imports ===
 
+use std::{
+    string::String,
+    type_name,
+};
 use account_protocol::{
     account::{Account, Auth},
     executable::Executable,
@@ -43,7 +47,7 @@ public fun request_borrow_cap<Config, Outcome: store, Cap>(
     account.build_intent!(
         params,
         outcome, 
-        b"".to_string(),
+        type_name_to_string<Cap>(),
         version::current(),
         BorrowCapIntent(),
         ctx,
@@ -79,4 +83,10 @@ public fun execute_return_cap<Config, Outcome: store, Cap: key + store>(
         BorrowCapIntent(), 
         |executable, iw| ac::do_return(executable, account, cap, version::current(), iw),
     )
+}
+
+// === Private functions ===
+
+fun type_name_to_string<T>(): String {
+    type_name::get<T>().into_string().to_string()
 }
