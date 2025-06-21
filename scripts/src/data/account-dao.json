@@ -4,15 +4,15 @@
     "id": "0x0038c5a7dc8a89df8449775982973fbd31fa0e3892e60b740dd8bcb3dc51c613"
   },
   {
-    "type": "0x2::package::UpgradeCap",
-    "id": "0x08afa9c18b34aa992cbd81057b873f8029b828b3b202aa72d0422c30248d2377"
-  },
-  {
-    "type": "0x5a53f7b9f934c7f311c8652f58807b09736ddd7b5890b422c274616f64c94804::dao::Registry",
-    "id": "0x1fa53017bac3c44f565d079ec44ce141bfc84a3f93b0c58a184d596af66ffdcc"
-  },
-  {
     "type": "AccountDao",
-    "id": "0x5a53f7b9f934c7f311c8652f58807b09736ddd7b5890b422c274616f64c94804"
+    "id": "0x7a5e095a37f29c55834bfd56508e570e3199ccf2ec0b760680cdf35f5653f8b7"
+  },
+  {
+    "type": "0x7a5e095a37f29c55834bfd56508e570e3199ccf2ec0b760680cdf35f5653f8b7::dao::Registry",
+    "id": "0x7b7c429cceb9bd1a9cfc7fa24ca92c3d142a50eb501ac35898da3a51888ad47c"
+  },
+  {
+    "type": "0x2::package::UpgradeCap",
+    "id": "0x97a2c1908b96394859c4938ea1a542eb93124d2ec07f41fa5bafbda00d08dbae"
   }
 ]
