@@ -10,7 +10,7 @@ use sui::{
 use account_extensions::extensions::{Self, Extensions, AdminCap};
 use account_protocol::{
     account::{Self, Account},
-    user::{Self, Registry, User},
+    user::{Self, Registry, User, Invite},
     deps,
     version,
 };
@@ -140,6 +140,63 @@ fun test_user_add_multiple_accounts_of_different_types() {
     destroy(account2);
     destroy(account3);
     destroy(account4);
+    destroy(user);
+    end(scenario, registry, extensions);
+}
+
+#[test]
+fun test_send_invites() {
+    let (mut scenario, registry, extensions) = start();
+
+    let mut user = user::new(scenario.ctx());
+    assert!(registry.users().length() == 0);
+    assert!(!registry.users().contains(OWNER));
+
+    let account1 = create_account(&extensions, scenario.ctx());
+    let account2 = create_account(&extensions, scenario.ctx());
+    let account3 = create_account_with_config(&extensions, AccountConfig1 {}, scenario.ctx());
+    let account4 = create_account_with_config(&extensions, AccountConfig2 {}, scenario.ctx());
+
+    user::send_invite(&account1, OWNER, Witness(), scenario.ctx());
+    scenario.next_tx(OWNER);
+    let invite1 = scenario.take_from_sender<Invite>();
+    user::send_invite(&account2, OWNER, Witness(), scenario.ctx());
+    scenario.next_tx(OWNER);
+    let invite2 = scenario.take_from_sender<Invite>();
+    user::send_invite(&account3, OWNER, Witness(), scenario.ctx());
+    scenario.next_tx(OWNER);
+    let invite3 = scenario.take_from_sender<Invite>();
+    user::send_invite(&account4, OWNER, Witness(), scenario.ctx());
+    scenario.next_tx(OWNER);
+    let invite4 = scenario.take_from_sender<Invite>();
+
+    user.accept_invite(invite1);
+    assert!(user.ids_for_type<DummyConfig>() == vector[account1.addr()]);
+    user.accept_invite(invite2);
+    assert!(user.ids_for_type<DummyConfig>() == vector[account1.addr(), account2.addr()]);
+    user.accept_invite(invite3);
+    assert!(user.ids_for_type<AccountConfig1>() == vector[account3.addr()]);
+    user.accept_invite(invite4);
+    assert!(user.ids_for_type<AccountConfig2>() == vector[account4.addr()]);
+
+    destroy(account1);
+    destroy(account2);
+    destroy(account3);
+    destroy(account4);
+    destroy(user);
+    end(scenario, registry, extensions);
+}
+
+#[test, expected_failure(abort_code = user::EAccountAlreadyRegistered)]
+fun test_error_add_already_existing_account() {
+    let (mut scenario, registry, extensions) = start();
+    let mut user = user::new(scenario.ctx());
+
+    let account = create_account(&extensions, scenario.ctx());
+    user.add_account(&account, Witness());
+    user.add_account(&account, Witness());
+
+    destroy(account);
     destroy(user);
     end(scenario, registry, extensions);
 }
