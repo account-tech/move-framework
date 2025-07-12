@@ -209,3 +209,22 @@ public fun contains_addr(deps: &Deps, addr: address): bool {
 public(package) fun toggle_unverified_allowed(deps: &mut Deps) {
     deps.unverified_allowed = !deps.unverified_allowed;
 }
+
+//**************************************************************************************************//
+// Test functions                                                                                   //
+//**************************************************************************************************//
+
+// === Test Helpers ===
+
+#[test_only]
+public fun new_for_testing(): Deps {
+    Deps {
+        inner: vector[
+            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
+            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+        ],
+        unverified_allowed: false
+    }
+}
+
