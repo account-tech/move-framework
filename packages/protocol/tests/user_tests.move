@@ -5,11 +5,11 @@ module account_protocol::user_tests;
 
 use sui::{
     test_utils::destroy,
-    test_scenario::{Self as ts, Scenario},
+    test_scenario as ts,
 };
 use account_protocol::{
     account::{Self, Account},
-    user::{Self, Registry, User, Invite},
+    user::{Self, User, Invite},
     deps,
     version,
 };
@@ -30,22 +30,6 @@ public struct AccountConfig2 has copy, drop, store {}
 
 // === Helpers ===
 
-fun start(): (Scenario, Registry) {
-    let mut scenario = ts::begin(OWNER);
-    // publish package
-    user::init_for_testing(scenario.ctx());
-    // retrieve objects
-    scenario.next_tx(OWNER);
-    let registry = scenario.take_shared<Registry>();
-    
-    (scenario, registry)
-}
-
-fun end(scenario: Scenario, registry: Registry) {
-    destroy(registry);
-    ts::end(scenario);
-}
-
 fun create_account(ctx: &mut TxContext): Account<DummyConfig> {
     let deps = deps::new_for_testing();
     account::new(DummyConfig {}, deps, version::current(), Witness(), ctx)
@@ -60,7 +44,8 @@ fun create_account_with_config<T: drop>(config: T, ctx: &mut TxContext): Account
 
 #[test]
 fun test_user_flow() {
-    let (mut scenario, mut registry) = start();
+    let mut scenario = ts::begin(@0xCAFE);
+    let mut registry = user::registry_for_testing(scenario.ctx());
 
     let mut user = user::new(scenario.ctx());
     assert!(registry.users().length() == 0);
@@ -94,12 +79,14 @@ fun test_user_flow() {
     destroy(account1);
     destroy(account2);
     destroy(account3);
-    end(scenario, registry);
+    destroy(registry);
+    ts::end(scenario);
 }
 
 #[test]
 fun test_user_add_multiple_accounts_of_different_types() {
-    let (mut scenario, registry) = start();
+    let mut scenario = ts::begin(@0xCAFE);
+    let mut registry = user::registry_for_testing(scenario.ctx());
 
     let mut user = user::new(scenario.ctx());
     assert!(registry.users().length() == 0);
@@ -131,12 +118,14 @@ fun test_user_add_multiple_accounts_of_different_types() {
     destroy(account3);
     destroy(account4);
     destroy(user);
-    end(scenario, registry);
+    destroy(registry);
+    ts::end(scenario);
 }
 
 #[test]
 fun test_send_invites() {
-    let (mut scenario, registry) = start();
+    let mut scenario = ts::begin(@0xCAFE);
+    let mut registry = user::registry_for_testing(scenario.ctx());
 
     let mut user = user::new(scenario.ctx());
     assert!(registry.users().length() == 0);
@@ -174,12 +163,13 @@ fun test_send_invites() {
     destroy(account3);
     destroy(account4);
     destroy(user);
-    end(scenario, registry);
+    destroy(registry);
+    ts::end(scenario);
 }
 
 #[test, expected_failure(abort_code = user::EAccountAlreadyRegistered)]
 fun test_error_add_already_existing_account() {
-    let (mut scenario, registry) = start();
+    let mut scenario = ts::begin(@0xCAFE);
     let mut user = user::new(scenario.ctx());
 
     let account = create_account(scenario.ctx());
@@ -188,12 +178,12 @@ fun test_error_add_already_existing_account() {
 
     destroy(account);
     destroy(user);
-    end(scenario, registry);
+    ts::end(scenario);
 }
 
 #[test, expected_failure(abort_code = user::EAccountTypeDoesntExist)]
 fun test_error_remove_empty_account_type() {
-    let (mut scenario, registry) = start();
+    let mut scenario = ts::begin(@0xCAFE);
     let account = create_account(scenario.ctx());
 
     let mut user = user::new(scenario.ctx());
@@ -201,12 +191,12 @@ fun test_error_remove_empty_account_type() {
 
     destroy(user);
     destroy(account);   
-    end(scenario, registry);
+    ts::end(scenario);
 }
 
 #[test, expected_failure(abort_code = user::EAccountNotFound)]
 fun test_error_remove_wrong_account() {
-    let (mut scenario, registry) = start();
+    let mut scenario = ts::begin(@0xCAFE);
 
     let account1 = create_account(scenario.ctx());
     let account2 = create_account(scenario.ctx());
@@ -218,5 +208,5 @@ fun test_error_remove_wrong_account() {
     destroy(user);
     destroy(account1);
     destroy(account2);
-    end(scenario, registry);
+    ts::end(scenario);
 }
