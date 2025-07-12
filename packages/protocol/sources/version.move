@@ -25,3 +25,10 @@ public(package) fun current(): VersionWitness {
 public fun get(): u64 {
     VERSION
 }
+
+// === Test functions ===
+
+#[test]
+public fun test_get() {
+    assert!(VERSION == 1, 1);
+}

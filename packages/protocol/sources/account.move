@@ -485,7 +485,7 @@ public(package) fun assert_is_config_module<Config, CW: drop>(
 }
 
 //**************************************************************************************************//
-// Test functions                                                                                   //
+// Tests                                                                                            //
 //**************************************************************************************************//
 
 // === Test Helpers ===
@@ -701,5 +701,69 @@ fun test_config_access() {
     
     // Should not abort - just testing access
     config(&account);
+    destroy(account);
+}
+
+#[test]
+fun test_has_managed_data_false() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    
+    assert!(!has_managed_data(&account, key));
+    destroy(account);
+}
+
+#[test]
+fun test_has_managed_asset_false() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    
+    assert!(!has_managed_asset(&account, key));
+    destroy(account);
+}
+
+#[test, expected_failure(abort_code = EManagedAssetDoesntExist)]
+fun test_borrow_managed_asset_doesnt_exist() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    
+    borrow_managed_asset<_, TestKey, TestAsset>(&account, key, version::current());
+    destroy(account);
+}
+
+#[test, expected_failure(abort_code = EManagedAssetDoesntExist)]
+fun test_remove_managed_asset_doesnt_exist() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    
+    let removed_asset = remove_managed_asset<_, TestKey, TestAsset>(&mut account, key, version::current());
+    destroy(removed_asset);
+    destroy(account);
+}
+
+#[test, expected_failure(abort_code = EManagedAssetAlreadyExists)]
+fun test_add_managed_asset_already_exists() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    let asset1 = TestAsset { id: object::new(ctx) };
+    let asset2 = TestAsset { id: object::new(ctx) };
+    
+    add_managed_asset(&mut account, key, asset1, version::current());
+    add_managed_asset(&mut account, key, asset2, version::current());
     destroy(account);
 }

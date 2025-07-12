@@ -65,3 +65,273 @@ public(package) fun destroy<Outcome: store>(executable: Executable<Outcome>): In
     let Executable { intent, .. } = executable;
     intent
 }
+
+//**************************************************************************************************//
+// Tests                                                                                            //
+//**************************************************************************************************//
+
+#[test_only]
+use sui::test_utils::{assert_eq, destroy as test_destroy};
+#[test_only]
+use sui::clock;
+#[test_only]
+use account_protocol::intents;
+
+#[test_only]
+public struct TestOutcome has copy, drop, store {}
+#[test_only]
+public struct TestAction has store {}
+#[test_only]
+public struct TestIntentWitness() has drop;
+
+#[test]
+fun test_new_executable() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = intents::new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = intents::new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    let executable = new(intent);
+    
+    assert_eq(action_idx(&executable), 0);
+    assert_eq(intent(&executable).key(), b"test_key".to_string());
+    
+    test_destroy(executable);
+    test_destroy(clock);
+}
+
+#[test]
+fun test_next_action() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = intents::new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let mut intent = intents::new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    intents::add_action(&mut intent, TestAction {}, TestIntentWitness());
+    intents::add_action(&mut intent, TestAction {}, TestIntentWitness());
+    
+    let mut executable = new(intent);
+    
+    assert_eq(action_idx(&executable), 0);
+    
+    let _action1: &TestAction = next_action(&mut executable, TestIntentWitness());
+    assert_eq(action_idx(&executable), 1);
+    
+    let _action2: &TestAction = next_action(&mut executable, TestIntentWitness());
+    assert_eq(action_idx(&executable), 2);
+    
+    test_destroy(executable);
+    test_destroy(clock);
+}
+
+#[test]
+fun test_contains_action() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = intents::new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let mut intent = intents::new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    intents::add_action(&mut intent, TestAction {}, TestIntentWitness());
+    
+    let mut executable = new(intent);
+    
+    assert!(contains_action<_, TestAction>(&mut executable));
+    
+    test_destroy(executable);
+    test_destroy(clock);
+}
+
+#[test]
+fun test_contains_action_empty() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = intents::new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = intents::new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    let mut executable = new(intent);
+    
+    assert!(!contains_action<_, TestAction>(&mut executable));
+    
+    test_destroy(executable);
+    test_destroy(clock);
+}
+
+#[test]
+fun test_destroy_executable() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = intents::new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = intents::new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    let executable = new(intent);
+    let recovered_intent = destroy(executable);
+    
+    assert_eq(recovered_intent.key(), b"test_key".to_string());
+    assert_eq(recovered_intent.description(), b"test_description".to_string());
+    
+    test_destroy(recovered_intent);
+    test_destroy(clock);
+}
+
+#[test]
+fun test_executable_with_multiple_actions() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = intents::new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let mut intent = intents::new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    // Add multiple actions
+    intents::add_action(&mut intent, TestAction {}, TestIntentWitness());
+    intents::add_action(&mut intent, TestAction {}, TestIntentWitness());
+    intents::add_action(&mut intent, TestAction {}, TestIntentWitness());
+    
+    let mut executable = new(intent);
+    
+    assert_eq(action_idx(&executable), 0);
+    assert_eq(intent(&executable).actions().length(), 3);
+    
+    // Execute all actions
+    let _action1: &TestAction = next_action(&mut executable, TestIntentWitness());
+    let _action2: &TestAction = next_action(&mut executable, TestIntentWitness());
+    let _action3: &TestAction = next_action(&mut executable, TestIntentWitness());
+    
+    assert_eq(action_idx(&executable), 3);
+    
+    test_destroy(executable);
+    test_destroy(clock);
+}
+
+#[test]
+fun test_intent_access() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = intents::new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = intents::new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    let executable = new(intent);
+    let intent_ref = intent(&executable);
+    
+    assert_eq(intent_ref.key(), b"test_key".to_string());
+    assert_eq(intent_ref.description(), b"test_description".to_string());
+    assert_eq(intent_ref.account(), @0xCAFE);
+    let mut role = @account_protocol.to_string();
+    role.append_utf8(b"::executable");
+    role.append_utf8(b"::test_role");
+    assert_eq(intent_ref.role(), role);
+    
+    test_destroy(executable);
+    test_destroy(clock);
+}
+

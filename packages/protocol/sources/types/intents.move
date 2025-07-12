@@ -411,3 +411,557 @@ fun new_role<IW: drop>(managed_name: String): String {
 
     role
 }
+
+//**************************************************************************************************//
+// Tests                                                                                            //
+//**************************************************************************************************//
+
+#[test_only]
+use sui::test_utils::{assert_eq, destroy};
+#[test_only]
+use sui::clock;
+
+#[test_only]
+public struct TestOutcome has copy, drop, store {}
+#[test_only]
+public struct TestAction has store {}
+#[test_only]
+public struct TestIntentWitness() has drop;
+#[test_only]
+public struct WrongWitness() has drop;
+
+#[test]
+fun test_new_params() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    assert_eq(params.key(), b"test_key".to_string());
+    assert_eq(params.description(), b"test_description".to_string());
+    assert_eq(params.execution_times(), vector[1000]);
+    assert_eq(params.expiration_time(), 2000);
+    assert_eq(params.creation_time(), 0);
+    
+    destroy(params);
+    destroy(clock);
+}
+
+#[test]
+fun test_new_params_with_rand_key() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let (params, key) = new_params_with_rand_key(
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    assert_eq(params.key(), key);
+    assert_eq(params.description(), b"test_description".to_string());
+    assert_eq(params.execution_times(), vector[1000]);
+    assert_eq(params.expiration_time(), 2000);
+    
+    destroy(params);
+    destroy(clock);
+}
+
+#[test, expected_failure(abort_code = ENoExecutionTime)]
+fun test_new_params_empty_execution_times() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[],
+        2000,
+        &clock,
+        ctx
+    );
+    destroy(params);
+    destroy(clock);
+}
+
+#[test, expected_failure(abort_code = EExecutionTimesNotAscending)]
+fun test_new_params_not_ascending_execution_times() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[2000, 1000],
+        3000,
+        &clock,
+        ctx
+    );
+    destroy(params);
+    destroy(clock);
+}
+
+#[test]
+fun test_new_intent() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    assert_eq(intent.key(), b"test_key".to_string());
+    assert_eq(intent.description(), b"test_description".to_string());
+    assert_eq(intent.account(), @0xCAFE);
+    assert_eq(intent.creation_time(), clock.timestamp_ms());
+    assert_eq(intent.execution_times(), vector[1000]);
+    assert_eq(intent.expiration_time(), 2000);
+    assert_eq(intent.actions().length(), 0);
+    
+    destroy(intent);
+    destroy(clock);
+}
+
+#[test]
+fun test_add_action() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let mut intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    add_action(&mut intent, TestAction {}, TestIntentWitness());
+    assert_eq(intent.actions().length(), 1);
+    
+    add_action(&mut intent, TestAction {}, TestIntentWitness());
+    assert_eq(intent.actions().length(), 2);
+    
+    destroy(intent);
+    destroy(clock);
+}
+
+#[test]
+fun test_remove_action() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    let mut intents = empty(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let mut intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    add_action(&mut intent, TestAction {}, TestIntentWitness());
+    add_action(&mut intent, TestAction {}, TestIntentWitness());
+    add_intent(&mut intents, intent);
+    
+    let mut expired = intents.destroy_intent<TestOutcome>(b"test_key".to_string());
+    
+    let action1: TestAction = remove_action(&mut expired);
+    let action2: TestAction = remove_action(&mut expired);
+    
+    assert_eq(expired.start_index, 2);
+    assert_eq(expired.actions().length(), 0);
+    
+    expired.destroy_empty();
+    destroy(intents);
+    destroy(clock);
+    destroy(action1);
+    destroy(action2);
+}
+
+#[test]
+fun test_empty_intents() {
+    let ctx = &mut tx_context::dummy();
+    let intents = empty(ctx);
+    
+    assert_eq(length(&intents), 0);
+    assert_eq(locked(&intents).size(), 0);
+    assert!(!contains(&intents, b"test_key".to_string()));
+    
+    destroy(intents);
+}
+
+#[test]
+fun test_add_and_remove_intent() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    let mut intents = empty(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    add_intent(&mut intents, intent);
+    assert_eq(length(&intents), 1);
+    assert!(contains(&intents, b"test_key".to_string()));
+    
+    let removed_intent = remove_intent<TestOutcome>(&mut intents, b"test_key".to_string());
+    assert_eq(length(&intents), 0);
+    assert!(!contains(&intents, b"test_key".to_string()));
+    
+    destroy(removed_intent);
+    destroy(intents);
+    destroy(clock);
+}
+
+#[test, expected_failure(abort_code = EKeyAlreadyExists)]
+fun test_add_duplicate_intent() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    let mut intents = empty(ctx);
+    
+    let params1 = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let params2 = new_params(
+        b"test_key".to_string(),
+        b"test_description2".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent1 = new_intent(
+        params1,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    let intent2 = new_intent(
+        params2,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    add_intent(&mut intents, intent1);
+    add_intent(&mut intents, intent2);
+    
+    destroy(intents);
+    destroy(clock);
+}
+
+#[test, expected_failure(abort_code = EIntentNotFound)]
+fun test_remove_nonexistent_intent() {
+    let ctx = &mut tx_context::dummy();
+    let mut intents = empty(ctx);
+    
+    let removed_intent = remove_intent<TestOutcome>(&mut intents, b"nonexistent_key".to_string());
+    
+    destroy(removed_intent);
+    destroy(intents);
+}
+
+#[test]
+fun test_lock_and_unlock_object() {
+    let ctx = &mut tx_context::dummy();
+    let mut intents = empty(ctx);
+    let object_id = tx_context::fresh_object_address(ctx).to_id();
+    
+    assert!(!locked(&intents).contains(&object_id));
+    
+    lock(&mut intents, object_id);
+    assert!(locked(&intents).contains(&object_id));
+    
+    unlock(&mut intents, object_id);
+    assert!(!locked(&intents).contains(&object_id));
+    
+    destroy(intents);
+}
+
+#[test, expected_failure(abort_code = EObjectAlreadyLocked)]
+fun test_lock_already_locked_object() {
+    let ctx = &mut tx_context::dummy();
+    let mut intents = empty(ctx);
+    let object_id = tx_context::fresh_object_address(ctx).to_id();
+    
+    lock(&mut intents, object_id);
+    lock(&mut intents, object_id);
+    
+    destroy(intents);
+}
+
+#[test, expected_failure(abort_code = EObjectNotLocked)]
+fun test_unlock_not_locked_object() {
+    let ctx = &mut tx_context::dummy();
+    let mut intents = empty(ctx);
+    let object_id = tx_context::fresh_object_address(ctx).to_id();
+    
+    unlock(&mut intents, object_id);
+    
+    destroy(intents);
+}
+
+#[test]
+fun test_pop_front_execution_time() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000, 2000, 3000],
+        4000,
+        &clock,
+        ctx
+    );
+    
+    let mut intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    assert_eq(intent.execution_times(), vector[1000, 2000, 3000]);
+    
+    let time1 = pop_front_execution_time(&mut intent);
+    assert_eq(time1, 1000);
+    assert_eq(intent.execution_times(), vector[2000, 3000]);
+    
+    let time2 = pop_front_execution_time(&mut intent);
+    assert_eq(time2, 2000);
+    assert_eq(intent.execution_times(), vector[3000]);
+    
+    destroy(intent);
+    destroy(clock);
+}
+
+#[test]
+fun test_assert_is_account() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    // Should not abort
+    assert_is_account(&intent, @0xCAFE);
+    
+    destroy(intent);
+    destroy(clock);
+}
+
+#[test, expected_failure(abort_code = EWrongAccount)]
+fun test_assert_is_account_wrong() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    assert_is_account(&intent, @0xBAD);
+    
+    destroy(intent);
+    destroy(clock);
+}
+
+#[test]
+fun test_assert_is_witness() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    // Should not abort
+    assert_is_witness(&intent, TestIntentWitness());
+    
+    destroy(intent);
+    destroy(clock);
+}
+
+#[test, expected_failure(abort_code = EWrongWitness)]
+fun test_assert_is_witness_wrong() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    let intent = new_intent(
+        params,
+        TestOutcome {},
+        b"test_role".to_string(),
+        @0xCAFE,
+        TestIntentWitness(),
+        ctx
+    );
+    
+    assert_is_witness(&intent, WrongWitness());
+    
+    destroy(intent);
+    destroy(clock);
+}
+
+#[test]
+fun test_assert_single_execution() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000],
+        2000,
+        &clock,
+        ctx
+    );
+    
+    // Should not abort
+    assert_single_execution(&params);
+    
+    destroy(params);
+    destroy(clock);
+}
+
+#[test, expected_failure(abort_code = ESingleExecution)]
+fun test_assert_single_execution_multiple() {
+    let ctx = &mut tx_context::dummy();
+    let clock = clock::create_for_testing(ctx);
+    
+    let params = new_params(
+        b"test_key".to_string(),
+        b"test_description".to_string(),
+        vector[1000, 2000],
+        3000,
+        &clock,
+        ctx
+    );
+    
+    assert_single_execution(&params);
+    
+    destroy(params);
+    destroy(clock);
+}

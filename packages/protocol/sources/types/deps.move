@@ -228,3 +228,76 @@ public fun new_for_testing(): Deps {
     }
 }
 
+// === Unit Tests ===
+
+#[test_only]
+use sui::test_utils::{assert_eq};
+
+#[test]
+fun test_new_for_testing() {
+    let deps = new_for_testing();
+    assert_eq(length(&deps), 3);
+    assert!(contains_name(&deps, b"AccountProtocol".to_string()));
+    assert!(contains_addr(&deps, @account_protocol));
+    assert_eq(get_by_idx(&deps, 0).name, b"AccountProtocol".to_string());
+    assert_eq(get_by_idx(&deps, 1).name, b"AccountConfig".to_string());
+    assert_eq(get_by_idx(&deps, 2).name, b"AccountActions".to_string());
+}
+
+#[test]
+fun test_get_by_name_and_addr() {
+    let deps = new_for_testing();
+    let dep = get_by_name(&deps, b"AccountProtocol".to_string());
+    assert_eq(dep.addr, @account_protocol);
+    let dep2 = get_by_addr(&deps, @0x2);
+    assert_eq(dep2.name, b"AccountActions".to_string());
+}
+
+#[test]
+fun test_name_addr_version() {
+    let deps = new_for_testing();
+    let dep = get_by_idx(&deps, 0);
+    assert_eq(name(dep), b"AccountProtocol".to_string());
+    assert_eq(addr(dep), @account_protocol);
+    assert_eq(version(dep), 1);
+}
+
+#[test]
+fun test_unverified_allowed() {
+    let mut deps = new_for_testing();
+    assert!(!unverified_allowed(&deps));
+    toggle_unverified_allowed(&mut deps);
+    assert!(unverified_allowed(&deps));
+    toggle_unverified_allowed(&mut deps);
+    assert!(!unverified_allowed(&deps));
+}
+
+#[test]
+fun test_contains_name_and_addr() {
+    let deps = new_for_testing();
+    assert!(contains_name(&deps, b"AccountProtocol".to_string()));
+    assert!(!contains_name(&deps, b"Nonexistent".to_string()));
+    assert!(contains_addr(&deps, @account_protocol));
+    assert!(!contains_addr(&deps, @0xDEAD));
+}
+
+#[test, expected_failure(abort_code = EDepNotFound)]
+fun test_get_by_name_not_found() {
+    let deps = new_for_testing();
+    get_by_name(&deps, b"Nonexistent".to_string());
+}
+
+#[test, expected_failure(abort_code = EDepNotFound)]
+fun test_get_by_addr_not_found() {
+    let deps = new_for_testing();
+    get_by_addr(&deps, @0xDEAD);
+}
+
+#[test]
+fun test_length() {
+    let deps = new_for_testing();
+    assert_eq(length(&deps), 3);
+}
+
+
+

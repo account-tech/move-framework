@@ -34,9 +34,25 @@ public fun package_addr(witness: &VersionWitness): address {
     witness.package_addr
 }
 
-// === Test functions ===
+//**************************************************************************************************//
+// Tests                                                                                            //
+//**************************************************************************************************//
+
+// === Test Helpers ===
 
 #[test_only]
 public fun new_for_testing(package_addr: address): VersionWitness {
     VersionWitness { package_addr }
+}
+
+// === Unit Tests ===
+
+#[test_only]
+public struct TestPackageWitness() has drop;
+
+#[test]
+fun test_new_version_witness() {
+    let witness = new(TestPackageWitness());
+    // Should not abort - just testing creation and access
+    assert!(package_addr(&witness) == @account_protocol, 0);
 }
