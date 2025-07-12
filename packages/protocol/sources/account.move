@@ -37,10 +37,11 @@ use sui::{
 };
 use account_protocol::{
     metadata::{Self, Metadata},
-    deps::Deps,
-    version_witness::VersionWitness,
+    deps::{Self, Deps},
+    version_witness::{Self, VersionWitness},
     intents::{Self, Intents, Intent, Expired, Params},
     executable::{Self, Executable},
+    version,
 };
 
 // === Errors ===
@@ -199,9 +200,9 @@ public fun insert_intent<Config, Outcome: store, IW: drop>(
 /// Keys must be custom types defined in the same module where the function is implemented.
 
 /// Adds a managed data struct to the account.
-public fun add_managed_data<Config, K: copy + drop + store, Data: store>(
+public fun add_managed_data<Config, Key: copy + drop + store, Data: store>(
     account: &mut Account<Config>, 
-    key: K, 
+    key: Key, 
     data: Data,
     version_witness: VersionWitness,
 ) {
@@ -211,17 +212,17 @@ public fun add_managed_data<Config, K: copy + drop + store, Data: store>(
 }
 
 /// Checks if a managed data struct exists in the account.
-public fun has_managed_data<Config, K: copy + drop + store>(
+public fun has_managed_data<Config, Key: copy + drop + store>(
     account: &Account<Config>, 
-    key: K, 
+    key: Key, 
 ): bool {
     df::exists_(&account.id, key)
 }
 
 /// Borrows a managed data struct from the account.
-public fun borrow_managed_data<Config, K: copy + drop + store, Data: store>(
+public fun borrow_managed_data<Config, Key: copy + drop + store, Data: store>(
     account: &Account<Config>,
-    key: K, 
+    key: Key, 
     version_witness: VersionWitness,
 ): &Data {
     assert!(has_managed_data(account, key), EManagedDataDoesntExist);
@@ -230,9 +231,9 @@ public fun borrow_managed_data<Config, K: copy + drop + store, Data: store>(
 }
 
 /// Borrows a managed data struct mutably from the account.
-public fun borrow_managed_data_mut<Config, K: copy + drop + store, Data: store>(
+public fun borrow_managed_data_mut<Config, Key: copy + drop + store, Data: store>(
     account: &mut Account<Config>, 
-    key: K, 
+    key: Key, 
     version_witness: VersionWitness,
 ): &mut Data {
     assert!(has_managed_data(account, key), EManagedDataDoesntExist);
@@ -241,9 +242,9 @@ public fun borrow_managed_data_mut<Config, K: copy + drop + store, Data: store>(
 }
 
 /// Removes a managed data struct from the account.
-public fun remove_managed_data<Config, K: copy + drop + store, A: store>(
+public fun remove_managed_data<Config, Key: copy + drop + store, A: store>(
     account: &mut Account<Config>, 
-    key: K, 
+    key: Key, 
     version_witness: VersionWitness,
 ): A {
     assert!(has_managed_data(account, key), EManagedDataDoesntExist);
@@ -252,9 +253,9 @@ public fun remove_managed_data<Config, K: copy + drop + store, A: store>(
 }
 
 /// Adds a managed object to the account.
-public fun add_managed_asset<Config, K: copy + drop + store, Asset: key + store>(
+public fun add_managed_asset<Config, Key: copy + drop + store, Asset: key + store>(
     account: &mut Account<Config>, 
-    key: K, 
+    key: Key, 
     asset: Asset,
     version_witness: VersionWitness,
 ) {
@@ -264,17 +265,17 @@ public fun add_managed_asset<Config, K: copy + drop + store, Asset: key + store>
 }
 
 /// Checks if a managed object exists in the account.
-public fun has_managed_asset<Config, K: copy + drop + store>(
+public fun has_managed_asset<Config, Key: copy + drop + store>(
     account: &Account<Config>, 
-    key: K, 
+    key: Key, 
 ): bool {
     dof::exists_(&account.id, key)
 }
 
 /// Borrows a managed object from the account.
-public fun borrow_managed_asset<Config, K: copy + drop + store, Asset: key + store>(
+public fun borrow_managed_asset<Config, Key: copy + drop + store, Asset: key + store>(
     account: &Account<Config>,
-    key: K, 
+    key: Key, 
     version_witness: VersionWitness,
 ): &Asset {
     assert!(has_managed_asset(account, key), EManagedAssetDoesntExist);
@@ -283,9 +284,9 @@ public fun borrow_managed_asset<Config, K: copy + drop + store, Asset: key + sto
 }
 
 /// Borrows a managed object mutably from the account.
-public fun borrow_managed_asset_mut<Config, K: copy + drop + store, Asset: key + store>(
+public fun borrow_managed_asset_mut<Config, Key: copy + drop + store, Asset: key + store>(
     account: &mut Account<Config>, 
-    key: K, 
+    key: Key, 
     version_witness: VersionWitness,
 ): &mut Asset {
     assert!(has_managed_asset(account, key), EManagedAssetDoesntExist);
@@ -294,9 +295,9 @@ public fun borrow_managed_asset_mut<Config, K: copy + drop + store, Asset: key +
 }
 
 /// Removes a managed object from the account.
-public fun remove_managed_asset<Config, K: copy + drop + store, Asset: key + store>(
+public fun remove_managed_asset<Config, Key: copy + drop + store, Asset: key + store>(
     account: &mut Account<Config>, 
-    key: K, 
+    key: Key, 
     version_witness: VersionWitness,
 ): Asset {
     assert!(has_managed_asset(account, key), EManagedAssetDoesntExist);
@@ -487,6 +488,8 @@ public(package) fun assert_is_config_module<Config, CW: drop>(
 // Test functions                                                                                   //
 //**************************************************************************************************//
 
+// === Test Helpers ===
+
 #[test_only]
 public fun init_for_testing(ctx: &mut TxContext) {
     init(ACCOUNT {}, ctx);
@@ -498,4 +501,205 @@ public struct Witness() has drop;
 #[test_only]
 public fun not_config_witness(): Witness {
     Witness()
+}
+
+// === Unit Tests ===
+
+#[test_only]
+use sui::test_utils::{assert_eq, destroy};
+
+#[test_only]
+public struct TestConfig has copy, drop, store {}
+#[test_only]
+public struct TestWitness() has drop;
+#[test_only]
+public struct WrongWitness() has drop;
+#[test_only]
+public struct TestKey has copy, drop, store {}
+#[test_only]
+public struct TestData has copy, drop, store {
+    value: u64
+}
+#[test_only]
+public struct TestAsset has key, store {
+    id: UID
+}
+
+#[test]
+fun test_addr() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let account_addr = addr(&account);
+    
+    assert_eq(account_addr, object::id(&account).to_address());
+    destroy(account);
+}
+
+#[test]
+fun test_verify_auth() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let auth = Auth { account_addr: account.addr() };
+    
+    // Should not abort
+    verify(&account, auth);
+    destroy(account);
+}
+
+#[test, expected_failure(abort_code = EWrongAccount)]
+fun test_verify_auth_wrong_account() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let auth = Auth { account_addr: @0xBAD };
+    
+    verify(&account, auth);
+    destroy(account);
+}
+
+#[test]
+fun test_assert_is_config_module_correct_witness() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    
+    // Should not abort
+    assert_is_config_module(&account, TestWitness());
+    destroy(account);
+}
+
+#[test]
+fun test_managed_data_flow() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    let data = TestData { value: 42 };
+    
+    // Test add
+    add_managed_data(&mut account, key, data, version::current());
+    assert!(has_managed_data(&account, key));
+    
+    // Test borrow
+    let borrowed_data = borrow_managed_data(&account, key, version::current());
+    assert_eq(*borrowed_data, data);
+    
+    // Test borrow_mut
+    let borrowed_mut_data = borrow_managed_data_mut(&mut account, key, version::current());
+    assert_eq(*borrowed_mut_data, data);
+    
+    // Test remove
+    let removed_data = remove_managed_data(&mut account, key, version::current());
+    assert_eq(removed_data, data);
+    assert!(!has_managed_data(&account, key));
+    destroy(account);
+}
+
+#[test, expected_failure(abort_code = EManagedDataAlreadyExists)]
+fun test_add_managed_data_already_exists() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    let data1 = TestData { value: 42 };
+    let data2 = TestData { value: 100 };
+    
+    add_managed_data(&mut account, key, data1, version::current());
+    add_managed_data(&mut account, key, data2, version::current());
+    destroy(account);
+}
+
+#[test, expected_failure(abort_code = EManagedDataDoesntExist)]
+fun test_borrow_managed_data_doesnt_exist() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    
+    borrow_managed_data<_, TestKey, TestData>(&account, key, version::current());
+    destroy(account);
+}
+
+#[test, expected_failure(abort_code = EManagedDataDoesntExist)]
+fun test_remove_managed_data_doesnt_exist() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    
+    remove_managed_data<_, TestKey, TestData>(&mut account, key, version::current());
+    destroy(account);
+}
+
+#[test]
+fun test_managed_asset_flow() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let key = TestKey {};
+    let asset = TestAsset { id: object::new(ctx) };
+    let asset_id = object::id(&asset);
+    
+    // Test add
+    add_managed_asset(&mut account, key, asset, version::current());
+    assert!(has_managed_asset(&account, key), 0);
+    
+    // Test borrow
+    let borrowed_asset = borrow_managed_asset<_, TestKey, TestAsset>(&account, key, version::current());
+    assert_eq(object::id(borrowed_asset), asset_id);
+    
+    // Test remove
+    let removed_asset = remove_managed_asset<_, TestKey, TestAsset>(&mut account, key, version::current());
+    assert_eq(object::id(&removed_asset), asset_id);
+    assert!(!has_managed_asset(&account, key));
+    destroy(account);
+    destroy(removed_asset);
+}
+
+#[test]
+fun test_new_auth() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let auth = new_auth(&account, version::current(), TestWitness());
+    
+    assert_eq(auth.account_addr, account.addr());
+    destroy(account);
+    destroy(auth);
+}
+
+#[test]
+fun test_metadata_access() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    
+    // Should not abort - just testing access
+    assert_eq(metadata(&account).size(), 0);
+    destroy(account);
+}
+
+#[test]
+fun test_config_access() {
+    let ctx = &mut tx_context::dummy();
+    let deps = deps::new_for_testing();
+    
+    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    
+    // Should not abort - just testing access
+    config(&account);
+    destroy(account);
 }
