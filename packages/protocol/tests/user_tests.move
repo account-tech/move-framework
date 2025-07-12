@@ -144,75 +144,6 @@ fun test_user_add_multiple_accounts_of_different_types() {
     end(scenario, registry, extensions);
 }
 
-#[test]
-fun test_reorder_accounts() {
-    let (mut scenario, registry, extensions) = start();
-    
-    let mut user = user::new(scenario.ctx());
-    user.add_account_for_testing<DummyConfig>(@0x1);
-    user.add_account_for_testing<DummyConfig>(@0x2);
-    user.add_account_for_testing<DummyConfig>(@0x3);
-
-    user.reorder_accounts<DummyConfig>(vector[@0x2, @0x3, @0x1]);
-
-    destroy(user);
-    end(scenario, registry, extensions);
-}
-
-#[test, expected_failure(abort_code = user::EWrongNumberOfAccounts)]
-fun test_reorder_accounts_different_length() {
-    let (mut scenario, registry, extensions) = start();
-    
-    let mut user = user::new(scenario.ctx());
-    user.add_account_for_testing<DummyConfig>(@0x1);
-    user.add_account_for_testing<DummyConfig>(@0x2);
-
-    user.reorder_accounts<DummyConfig>(vector[@0x1]);
-
-    destroy(user);
-    end(scenario, registry, extensions);
-}
-
-#[test, expected_failure(abort_code = user::EAccountNotFound)]
-fun test_reorder_accounts_wrong_account() {
-    let (mut scenario, registry, extensions) = start();
-    
-    let mut user = user::new(scenario.ctx());
-    user.add_account_for_testing<DummyConfig>(@0x1);
-    user.add_account_for_testing<DummyConfig>(@0x2);
-
-    user.reorder_accounts<DummyConfig>(vector[@0x1, @0x1]);
-
-    destroy(user);
-    end(scenario, registry, extensions);
-}
-
-#[test, expected_failure(abort_code = user::ENoAccountsToReorder)]
-fun test_reorder_accounts_empty() {
-    let (mut scenario, registry, extensions) = start();
-    
-    let mut user = user::new(scenario.ctx());
-
-    user.reorder_accounts<DummyConfig>(vector[]);
-
-    destroy(user);
-    end(scenario, registry, extensions);
-}
-
-#[test, expected_failure(abort_code = user::EAccountAlreadyRegistered)]
-fun test_error_add_already_existing_account() {
-    let (mut scenario, registry, extensions) = start();
-    let account = create_account(&extensions, scenario.ctx());
-
-    let mut user = user::new(scenario.ctx());
-    user.add_account(&account, Witness());
-    user.add_account(&account, Witness());
-    
-    destroy(user);
-    destroy(account);
-    end(scenario, registry, extensions);
-}
-
 #[test, expected_failure(abort_code = user::EAccountTypeDoesntExist)]
 fun test_error_remove_empty_account_type() {
     let (mut scenario, registry, extensions) = start();
@@ -240,39 +171,5 @@ fun test_error_remove_wrong_account() {
     destroy(user);
     destroy(account1);
     destroy(account2);
-    end(scenario, registry, extensions);
-}
-
-#[test, expected_failure(abort_code = user::EAlreadyHasUser)]
-fun test_error_transfer_to_existing_user() {
-    let (mut scenario, mut registry, extensions) = start();
-
-    registry.transfer(user::new(scenario.ctx()), OWNER, scenario.ctx());
-    registry.transfer(user::new(scenario.ctx()), OWNER, scenario.ctx());
-
-    end(scenario, registry, extensions);
-}
-
-#[test, expected_failure(abort_code = user::EWrongUserId)]
-fun test_error_transfer_wrong_user_object() {
-    let (mut scenario, mut registry, extensions) = start();
-
-    registry.transfer(user::new(scenario.ctx()), OWNER, scenario.ctx());
-    // OWNER transfers wrong user object to ALICE
-    registry.transfer(user::new(scenario.ctx()), ALICE, scenario.ctx());
-
-    end(scenario, registry, extensions);
-}
-
-#[test, expected_failure(abort_code = user::ENotEmpty)]
-fun test_error_destroy_non_empty_user() {
-    let (mut scenario, mut registry, extensions) = start();
-    let account = create_account(&extensions, scenario.ctx());
-
-    let mut user = user::new(scenario.ctx());
-    user.add_account(&account, Witness());
-    registry.destroy(user, scenario.ctx());
-
-    destroy(account);
     end(scenario, registry, extensions);
 }

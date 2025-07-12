@@ -207,7 +207,11 @@ public fun all_ids(user: &User): vector<address> {
     ids
 }
 
-// === Test functions ===
+//**************************************************************************************************//
+// Tests                                                                                            //
+//**************************************************************************************************//
+
+// === Test Helpers ===
 
 #[test_only]
 public fun init_for_testing(ctx: &mut TxContext) {
@@ -226,4 +230,214 @@ public fun add_account_for_testing<Config>(
     } else {
         user.accounts.insert(account_type, vector[account_addr]);
     };
+}
+
+// === Unit Tests ===
+
+#[test_only]
+use sui::test_scenario::{Self as ts, Scenario};
+#[test_only]
+use sui::test_utils as tu;
+
+#[test_only]
+public struct DummyConfig has copy, drop, store {}
+
+#[test_only]
+fun start(): (Scenario, Registry) {
+    let mut scenario = ts::begin(@0xCAFE);
+    init(scenario.ctx());
+    scenario.next_tx(@0xCAFE);
+    let registry = scenario.take_shared<Registry>();
+    (scenario, registry)
+}
+
+#[test_only]
+fun end(scenario: Scenario, registry: Registry) {
+    tu::destroy(registry);
+    ts::end(scenario);
+}
+
+#[test]
+fun test_transfer_user_recipient() {
+    let (mut scenario, mut registry) = start();
+    let user = new(scenario.ctx());
+
+    transfer(&mut registry, user, @0xA11CE, scenario.ctx());
+    scenario.next_tx(@0xA11CE);
+
+    let user = ts::take_from_sender<User>(&scenario);
+    let user_id = object::id(&user);
+
+    assert!(registry.users.contains(@0xA11CE));
+    assert!(registry.users.borrow(@0xA11CE) == user_id);
+
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test]
+fun test_destroy_user() {
+    let (mut scenario, mut registry) = start();
+    let user = new(scenario.ctx());
+
+    transfer(&mut registry, user, @0xA11CE, scenario.ctx());
+    scenario.next_tx(@0xA11CE);
+
+    let user = ts::take_from_sender<User>(&scenario);
+    destroy(&mut registry, user, scenario.ctx());
+
+    assert!(!registry.users.contains(@0xA11CE));
+    end(scenario, registry);
+}
+
+#[test]
+fun test_accept_invite() {
+    let (mut scenario, registry) = start();
+    let mut user = new(scenario.ctx());
+
+    let invite = Invite {
+        id: object::new(scenario.ctx()),
+        account_addr: @0xACC,
+        account_type: b"0x0::config::Config".to_string(),
+    };
+
+    accept_invite(&mut user, invite);
+    assert!(user.accounts.contains(&b"0x0::config::Config".to_string()));
+    assert!(user.accounts[&b"0x0::config::Config".to_string()].contains(&@0xACC));
+
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test]
+fun test_refuse_invite() {
+    let (mut scenario, registry) = start();
+    let user = new(scenario.ctx());
+
+    let invite = Invite {
+        id: object::new(scenario.ctx()),
+        account_addr: @0xACC,
+        account_type: b"0x0::config::Config".to_string(),
+    };
+
+    refuse_invite(invite);
+    assert!(!user.accounts.contains(&b"0x0::config::Config".to_string()));
+
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test]
+fun test_reorder_accounts() {
+    let (mut scenario, registry) = start();
+    let mut user = new(scenario.ctx());
+    
+    user.add_account_for_testing<DummyConfig>(@0x1);
+    user.add_account_for_testing<DummyConfig>(@0x2);
+    user.add_account_for_testing<DummyConfig>(@0x3);
+    let key = type_name::get<DummyConfig>().into_string().to_string();
+    assert!(user.accounts.get(&key) == vector[@0x1, @0x2, @0x3]);
+
+    user.reorder_accounts<DummyConfig>(vector[@0x2, @0x3, @0x1]);
+    assert!(user.accounts.get(&key) == vector[@0x2, @0x3, @0x1]);
+
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test, expected_failure(abort_code = EAlreadyHasUser)]
+fun test_error_transfer_to_existing_user() {
+    let (mut scenario, mut registry) = start();
+
+    registry.transfer(new(scenario.ctx()), @0xCAFE, scenario.ctx());
+    registry.transfer(new(scenario.ctx()), @0xCAFE, scenario.ctx());
+
+    end(scenario, registry);
+}
+
+#[test, expected_failure(abort_code = EWrongUserId)]
+fun test_error_transfer_wrong_user_object() {
+    let (mut scenario, mut registry) = start();
+
+    registry.transfer(new(scenario.ctx()), @0xCAFE, scenario.ctx());
+    // OWNER transfers wrong user object to ALICE
+    registry.transfer(new(scenario.ctx()), @0xA11CE, scenario.ctx());
+
+    end(scenario, registry);
+}
+
+#[test, expected_failure(abort_code = ENotEmpty)]
+fun test_error_destroy_non_empty_user() {
+    let (mut scenario, mut registry) = start();
+    let mut user = new(scenario.ctx());
+
+    user.add_account_for_testing<DummyConfig>(@0xACC);
+    destroy(&mut registry, user, scenario.ctx());
+
+    end(scenario, registry);
+}
+
+#[test, expected_failure(abort_code = EAccountAlreadyRegistered)]
+fun test_error_add_already_existing_account() {
+    let (mut scenario, registry) = start();
+    let mut user = new(scenario.ctx());
+
+    user.add_account_for_testing<DummyConfig>(@0xACC);
+    user.add_account_for_testing<DummyConfig>(@0xACC);
+    
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test, expected_failure(abort_code = ENoAccountsToReorder)]
+fun test_reorder_accounts_empty() {
+    let (mut scenario, registry) = start();
+    let mut user = new(scenario.ctx());
+
+    user.reorder_accounts<DummyConfig>(vector[]);
+
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test_only]
+public struct DummyConfig2 has copy, drop, store {}
+#[test, expected_failure(abort_code = ENoAccountsToReorder)]
+fun test_reorder_accounts_type_empty() {
+    let (mut scenario, registry) = start();
+    let mut user = new(scenario.ctx());
+
+    user.add_account_for_testing<DummyConfig>(@0xACC);
+    user.reorder_accounts<DummyConfig2>(vector[@0xACC]);
+
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test, expected_failure(abort_code = EWrongNumberOfAccounts)]
+fun test_reorder_accounts_different_length() {
+    let (mut scenario, registry) = start();
+    
+    let mut user = new(scenario.ctx());
+    user.add_account_for_testing<DummyConfig>(@0xACC);
+    user.add_account_for_testing<DummyConfig>(@0xACC2);
+
+    user.reorder_accounts<DummyConfig>(vector[@0xACC]);
+
+    tu::destroy(user);
+    end(scenario, registry);
+}
+
+#[test, expected_failure(abort_code = EAccountNotFound)]
+fun test_reorder_accounts_wrong_account() {
+    let (mut scenario, registry) = start();
+    
+    let mut user = new(scenario.ctx());
+    user.add_account_for_testing<DummyConfig>(@0x1);
+    user.add_account_for_testing<DummyConfig>(@0x2);
+
+    user.reorder_accounts<DummyConfig>(vector[@0x1, @0x3]);
+
+    tu::destroy(user);
+    end(scenario, registry);
 }
