@@ -78,8 +78,12 @@ public fun update_extensions_to_latest<Config>(
             new_names.push_back(dep.name());
             new_addrs.push_back(addr);
             new_versions.push_back(version);
+        } else {
+            // else cannot automatically update to latest version so add as is
+            new_names.push_back(dep.name());
+            new_addrs.push_back(dep.addr());
+            new_versions.push_back(dep.version());
         };
-        // else cannot automatically update to latest version
         i = i + 1;
     };
 
