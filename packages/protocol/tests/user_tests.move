@@ -86,7 +86,7 @@ fun test_user_flow() {
 #[test]
 fun test_user_add_multiple_accounts_of_different_types() {
     let mut scenario = ts::begin(@0xCAFE);
-    let mut registry = user::registry_for_testing(scenario.ctx());
+    let registry = user::registry_for_testing(scenario.ctx());
 
     let mut user = user::new(scenario.ctx());
     assert!(registry.users().length() == 0);
@@ -125,7 +125,7 @@ fun test_user_add_multiple_accounts_of_different_types() {
 #[test]
 fun test_send_invites() {
     let mut scenario = ts::begin(@0xCAFE);
-    let mut registry = user::registry_for_testing(scenario.ctx());
+    let registry = user::registry_for_testing(scenario.ctx());
 
     let mut user = user::new(scenario.ctx());
     assert!(registry.users().length() == 0);

@@ -117,9 +117,7 @@ public fun reorder_accounts<Config>(user: &mut User, addrs: vector<address>) {
     assert!(user.accounts.contains(&account_type), ENoAccountsToReorder);
 
     let accounts = user.accounts.get_mut(&account_type);
-
     assert!(accounts.length() == addrs.length(), EWrongNumberOfAccounts);
-    assert!(!accounts.is_empty(), ENoAccountsToReorder);
 
     let mut new_order = vector[];
     addrs.do!(|addr| {
@@ -253,6 +251,19 @@ public struct DummyConfig has copy, drop, store {}
 public struct DummyConfig2 has copy, drop, store {}
 
 #[test]
+fun test_init() {
+    let mut scenario = ts::begin(@0xCAFE);
+    init(scenario.ctx());
+    scenario.next_tx(@0xCAFE);
+
+    let registry = scenario.take_shared<Registry>();
+    assert!(registry.users.is_empty());
+    ts::return_shared(registry);
+
+    scenario.end();
+}
+
+#[test]
 fun test_transfer_user_recipient() {
     let mut scenario = ts::begin(@0xCAFE);
     let mut registry = registry_for_testing(scenario.ctx());
@@ -261,7 +272,7 @@ fun test_transfer_user_recipient() {
     transfer(&mut registry, user, @0xA11CE, scenario.ctx());
     scenario.next_tx(@0xA11CE);
 
-    let user = ts::take_from_sender<User>(&scenario);
+    let user = scenario.take_from_sender<User>();
     let user_id = object::id(&user);
 
     assert!(registry.users.contains(@0xA11CE));
@@ -269,7 +280,7 @@ fun test_transfer_user_recipient() {
 
     tu::destroy(user);
     tu::destroy(registry);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test]
@@ -281,12 +292,12 @@ fun test_destroy_user() {
     transfer(&mut registry, user, @0xA11CE, scenario.ctx());
     scenario.next_tx(@0xA11CE);
 
-    let user = ts::take_from_sender<User>(&scenario);
+    let user = scenario.take_from_sender<User>();
     destroy(&mut registry, user, scenario.ctx());
 
     assert!(!registry.users.contains(@0xA11CE));
     tu::destroy(registry);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test]
@@ -305,7 +316,7 @@ fun test_accept_invite() {
     assert!(user.accounts[&b"0x0::config::Config".to_string()].contains(&@0xACC));
 
     tu::destroy(user);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test]
@@ -323,7 +334,7 @@ fun test_refuse_invite() {
     assert!(!user.accounts.contains(&b"0x0::config::Config".to_string()));
 
     tu::destroy(user);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test]
@@ -341,7 +352,7 @@ fun test_reorder_accounts() {
     assert!(user.accounts.get(&key) == vector[@0x2, @0x3, @0x1]);
 
     tu::destroy(user);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test, expected_failure(abort_code = EAlreadyHasUser)]
@@ -353,7 +364,7 @@ fun test_error_transfer_to_existing_user() {
     registry.transfer(new(scenario.ctx()), @0xCAFE, scenario.ctx());
 
     tu::destroy(registry);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test, expected_failure(abort_code = EWrongUserId)]
@@ -366,7 +377,7 @@ fun test_error_transfer_wrong_user_object() {
     registry.transfer(new(scenario.ctx()), @0xA11CE, scenario.ctx());
 
     tu::destroy(registry);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test, expected_failure(abort_code = ENotEmpty)]
@@ -379,7 +390,7 @@ fun test_error_destroy_non_empty_user() {
     destroy(&mut registry, user, scenario.ctx());
 
     tu::destroy(registry);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test, expected_failure(abort_code = EAccountAlreadyRegistered)]
@@ -391,7 +402,7 @@ fun test_error_add_already_existing_account() {
     user.add_account_for_testing<DummyConfig>(@0xACC);
     
     tu::destroy(user);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test, expected_failure(abort_code = ENoAccountsToReorder)]
@@ -402,19 +413,7 @@ fun test_reorder_accounts_empty() {
     user.reorder_accounts<DummyConfig>(vector[]);
 
     tu::destroy(user);
-    ts::end(scenario);
-}
-
-#[test, expected_failure(abort_code = ENoAccountsToReorder)]
-fun test_reorder_accounts_type_empty() {
-    let mut scenario = ts::begin(@0xCAFE);
-    let mut user = new(scenario.ctx());
-
-    user.add_account_for_testing<DummyConfig>(@0xACC);
-    user.reorder_accounts<DummyConfig2>(vector[@0xACC]);
-
-    tu::destroy(user);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test, expected_failure(abort_code = EWrongNumberOfAccounts)]
@@ -428,7 +427,7 @@ fun test_reorder_accounts_different_length() {
     user.reorder_accounts<DummyConfig>(vector[@0xACC]);
 
     tu::destroy(user);
-    ts::end(scenario);
+    scenario.end();
 }
 
 #[test, expected_failure(abort_code = EAccountNotFound)]
@@ -442,5 +441,5 @@ fun test_reorder_accounts_wrong_account() {
     user.reorder_accounts<DummyConfig>(vector[@0x1, @0x3]);
 
     tu::destroy(user);
-    ts::end(scenario);
+    scenario.end();
 }
