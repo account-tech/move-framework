@@ -145,3 +145,11 @@ fun get_idx_for_name(extensions: &Extensions, name: String): u64 {
 public fun init_for_testing(ctx: &mut TxContext) {
     init(ctx);
 }
+
+#[test_only]
+public struct Witness() has drop;
+
+#[test_only]
+public fun witness(): Witness {
+    Witness()
+}

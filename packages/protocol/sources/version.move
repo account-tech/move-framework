@@ -28,7 +28,15 @@ public fun get(): u64 {
 
 // === Test functions ===
 
+#[test_only]
+public struct Witness() has drop;
+
+#[test_only]
+public fun witness(): Witness {
+    Witness()
+}
+
 #[test]
 public fun test_get() {
-    assert!(VERSION == 1, 1);
+    assert!(get() == 1, 1);
 }
