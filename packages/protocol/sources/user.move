@@ -319,6 +319,27 @@ fun test_accept_invite() {
     scenario.end();
 }
 
+#[test, expected_failure(abort_code = EAccountAlreadyRegistered)]
+fun test_accept_invite_already_registered() {
+    let mut scenario = ts::begin(@0xCAFE);
+    let mut user = new(scenario.ctx());
+
+    let invite = Invite {
+        id: object::new(scenario.ctx()),
+        account_addr: @0xACC,
+        account_type: type_name::get<DummyConfig>().into_string().to_string(),
+    };
+
+    user.add_account_for_testing<DummyConfig>(@0xACC);
+    assert!(user.accounts.contains(&type_name::get<DummyConfig>().into_string().to_string()));
+    assert!(user.accounts[&type_name::get<DummyConfig>().into_string().to_string()].contains(&@0xACC));
+    
+    accept_invite(&mut user, invite);
+
+    tu::destroy(user);
+    scenario.end();
+}
+
 #[test]
 fun test_refuse_invite() {
     let mut scenario = ts::begin(@0xCAFE);

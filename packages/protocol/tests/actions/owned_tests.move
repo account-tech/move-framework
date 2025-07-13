@@ -213,6 +213,53 @@ fun test_merge_2_coins_and_split() {
     end(scenario, extensions, account, clock);          
 }  
 
+#[test, expected_failure(abort_code = owned::EWrongObject)]
+fun test_error_do_withdraw_wrong_object() {
+    let (mut scenario, extensions, mut account, clock) = start();
+    let key = b"dummy".to_string();
+
+    let id = send_coin(account.addr(), 5, &mut scenario);
+    let not_id = send_coin(account.addr(), 5, &mut scenario);
+
+    let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
+    owned::new_withdraw(&mut intent, &mut account, id, DummyIntent());
+    account.insert_intent(intent, version::current(), DummyIntent());
+
+    let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
+    let coin = owned::do_withdraw<_, Outcome, Coin<SUI>, _>(
+        &mut executable,
+        &mut account, 
+        ts::receiving_ticket_by_id<Coin<SUI>>(not_id),
+        DummyIntent(),
+    );
+    account.confirm_execution(executable);
+
+    assert!(coin.value() == 5);
+    destroy(coin);
+    end(scenario, extensions, account, clock);
+}
+
+#[test, expected_failure(abort_code = owned::EObjectLocked)]
+fun test_error_merge_locked_coins() {
+    let (mut scenario, extensions, mut account, clock) = start();
+    let account_address = account.addr();
+
+    let id1 = keep_coin(account_address, 60, &mut scenario);
+    let id2 = keep_coin(account_address, 60, &mut scenario);
+    account.intents_mut(version::current(), Witness()).lock(id1);
+
+    let auth = account.new_auth(version::current(), Witness());
+    let _ = owned::merge_and_split<Config, SUI>(
+        auth,
+        &mut account,
+        vector[ts::receiving_ticket_by_id(id1), ts::receiving_ticket_by_id(id2)],
+        vector[100],
+        scenario.ctx()
+    );
+
+    end(scenario, extensions, account, clock);          
+}  
+
 // sanity checks as these are tested in AccountProtocol tests
 
 #[test, expected_failure(abort_code = intents::EWrongAccount)]

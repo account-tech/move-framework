@@ -112,6 +112,7 @@ fun split<Config, CoinType>(
     amounts: vector<u64>, 
     ctx: &mut TxContext
 ): vector<ID> {
+    // never throws as long as the function is called from merge_and_split only
     assert!(!account.intents().locked().contains(&object::id(&coin)), EObjectLocked);
 
     let ids = amounts.map!(|amount| {

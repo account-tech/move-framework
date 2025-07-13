@@ -147,6 +147,48 @@ public fun init_for_testing(ctx: &mut TxContext) {
 }
 
 #[test_only]
+public fun new_for_testing(ctx: &mut TxContext): Extensions {
+    Extensions {
+        id: object::new(ctx),
+        inner: vector[]
+    }
+}
+
+#[test_only]
+public fun add_for_testing(extensions: &mut Extensions, name: String, addr: address, version: u64) {    
+    assert!(!extensions.inner.any!(|extension| extension.name == name), EExtensionAlreadyExists);
+    assert!(!extensions.inner.any!(|extension| extension.history.any!(|h| h.addr == addr)), EExtensionAlreadyExists);
+    let extension = Extension { name, history: vector[History { addr, version }] };
+    extensions.inner.push_back(extension);
+}
+
+#[test_only]
+public fun remove_for_testing(extensions: &mut Extensions, name: String) {
+    let idx = extensions.get_idx_for_name(name);
+    assert!(idx > 0, ECannotRemoveAccountProtocol);
+    extensions.inner.remove(idx);
+}
+
+#[test_only]
+public fun update_for_testing(extensions: &mut Extensions, name: String, addr: address, version: u64) {
+    let idx = extensions.get_idx_for_name(name);
+    assert!(!extensions.inner[idx].history.any!(|h| h.addr == addr), EExtensionAlreadyExists);
+    extensions.inner[idx].history.push_back(History { addr, version });
+}
+
+#[test_only]
+public fun new_for_testing_with_addrs(addr1: address, addr2: address, addr3: address, ctx: &mut TxContext): Extensions {
+    Extensions {
+        id: object::new(ctx),
+        inner: vector[
+            Extension { name: b"AccountProtocol".to_string(), history: vector[History { addr: addr1, version: 1 }] },
+            Extension { name: b"AccountConfig".to_string(), history: vector[History { addr: addr2, version: 1 }] },
+            Extension { name: b"AccountActions".to_string(), history: vector[History { addr: addr3, version: 1 }] }
+        ]
+    }
+}
+
+#[test_only]
 public struct Witness() has drop;
 
 #[test_only]
