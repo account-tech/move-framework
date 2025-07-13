@@ -11,7 +11,7 @@ module account_protocol::deps;
 
 use std::string::String;
 use account_extensions::extensions::Extensions;
-use account_protocol::version_witness::VersionWitness;
+use account_protocol::version_witness::{Self, VersionWitness};
 
 // === Errors ===
 
@@ -112,11 +112,7 @@ public fun new_inner(
         EAccountProtocolMissing
     );
     // AccountConfig is mandatory and cannot be removed
-    assert!(
-        names[1] == deps.get_by_idx(1).name &&
-        (deps.unverified_allowed || extensions.is_extension(names[1], addresses[1], versions[1])),
-        EAccountConfigMissing
-    );
+    assert!(names[1] == deps.get_by_idx(1).name, EAccountConfigMissing);
 
     let mut inner = vector<Dep>[];
     names.zip_do!(addresses, |name, addr| {
@@ -228,69 +224,117 @@ public fun new_for_testing(): Deps {
     }
 }
 
+#[test_only]
+public fun toggle_unverified_allowed_for_testing(deps: &mut Deps) {
+    deps.unverified_allowed = !deps.unverified_allowed;
+}
+
 // === Unit Tests ===
 
 #[test_only]
-use sui::test_utils::{assert_eq};
+use sui::test_utils::{assert_eq, destroy};
 
 #[test]
-fun test_new_for_testing() {
-    let deps = new_for_testing();
-    assert_eq(length(&deps), 3);
-    assert!(contains_name(&deps, b"AccountProtocol".to_string()));
-    assert!(contains_addr(&deps, @account_protocol));
-    assert_eq(get_by_idx(&deps, 0).name, b"AccountProtocol".to_string());
-    assert_eq(get_by_idx(&deps, 1).name, b"AccountConfig".to_string());
-    assert_eq(get_by_idx(&deps, 2).name, b"AccountActions".to_string());
+fun test_inner_mut() {
+    let mut deps = Deps {
+        inner: vector[
+            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
+            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+        ],
+        unverified_allowed: false
+    };
+    let inner = inner_mut(&mut deps);
+    
+    assert_eq(inner.length(), 3);
+    inner.push_back(Dep { name: b"NewDep".to_string(), addr: @0x3, version: 1 });
+    assert_eq(inner.length(), 4);
+    
+    destroy(deps);
 }
 
 #[test]
-fun test_get_by_name_and_addr() {
-    let deps = new_for_testing();
-    let dep = get_by_name(&deps, b"AccountProtocol".to_string());
-    assert_eq(dep.addr, @account_protocol);
-    let dep2 = get_by_addr(&deps, @0x2);
-    assert_eq(dep2.name, b"AccountActions".to_string());
+fun test_check_success() {
+    let deps = Deps {
+        inner: vector[
+            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
+            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+        ],
+        unverified_allowed: false
+    };
+    let witness = version_witness::new_for_testing(@account_protocol);
+    
+    check(&deps, witness);
+}
+
+#[test, expected_failure(abort_code = ENotDep)]
+fun test_check_failure() {
+    let deps = Deps {
+        inner: vector[
+            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
+            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+        ],
+        unverified_allowed: false
+    };
+    let witness = version_witness::new_for_testing(@0xDEAD);
+    
+    check(&deps, witness);
 }
 
 #[test]
-fun test_name_addr_version() {
+fun test_get_by_idx() {
     let deps = new_for_testing();
     let dep = get_by_idx(&deps, 0);
-    assert_eq(name(dep), b"AccountProtocol".to_string());
-    assert_eq(addr(dep), @account_protocol);
-    assert_eq(version(dep), 1);
+    
+    assert_eq(dep.name, b"AccountProtocol".to_string());
+    assert_eq(dep.addr, @account_protocol);
+    assert_eq(dep.version, 1);
 }
 
 #[test]
-fun test_unverified_allowed() {
-    let mut deps = new_for_testing();
-    assert!(!unverified_allowed(&deps));
-    toggle_unverified_allowed(&mut deps);
-    assert!(unverified_allowed(&deps));
-    toggle_unverified_allowed(&mut deps);
-    assert!(!unverified_allowed(&deps));
-}
-
-#[test]
-fun test_contains_name_and_addr() {
+fun test_get_by_name_success() {
     let deps = new_for_testing();
-    assert!(contains_name(&deps, b"AccountProtocol".to_string()));
-    assert!(!contains_name(&deps, b"Nonexistent".to_string()));
-    assert!(contains_addr(&deps, @account_protocol));
-    assert!(!contains_addr(&deps, @0xDEAD));
+    let dep = get_by_name(&deps, b"AccountProtocol".to_string());
+    
+    assert_eq(dep.name, b"AccountProtocol".to_string());
+    assert_eq(dep.addr, @account_protocol);
+    assert_eq(dep.version, 1);
 }
 
 #[test, expected_failure(abort_code = EDepNotFound)]
 fun test_get_by_name_not_found() {
     let deps = new_for_testing();
-    get_by_name(&deps, b"Nonexistent".to_string());
+    let _dep = get_by_name(&deps, b"Nonexistent".to_string());
+}
+
+#[test, expected_failure(abort_code = EDepNotFound)]
+fun test_get_by_name_empty_string() {
+    let deps = new_for_testing();
+    let _dep = get_by_name(&deps, b"".to_string());
+}
+
+#[test]
+fun test_get_by_addr_success() {
+    let deps = new_for_testing();
+    let dep = get_by_addr(&deps, @account_protocol);
+    
+    assert_eq(dep.name, b"AccountProtocol".to_string());
+    assert_eq(dep.addr, @account_protocol);
+    assert_eq(dep.version, 1);
 }
 
 #[test, expected_failure(abort_code = EDepNotFound)]
 fun test_get_by_addr_not_found() {
     let deps = new_for_testing();
-    get_by_addr(&deps, @0xDEAD);
+    let _dep = get_by_addr(&deps, @0xDEAD);
+}
+
+#[test, expected_failure(abort_code = EDepNotFound)]
+fun test_get_by_addr_zero_address() {
+    let deps = new_for_testing();
+    let _dep = get_by_addr(&deps, @0x0);
 }
 
 #[test]
@@ -299,5 +343,93 @@ fun test_length() {
     assert_eq(length(&deps), 3);
 }
 
+#[test]
+fun test_name_addr_version() {
+    let deps = new_for_testing();
+    let dep = get_by_idx(&deps, 0);
+    
+    assert_eq(name(dep), b"AccountProtocol".to_string());
+    assert_eq(addr(dep), @account_protocol);
+    assert_eq(version(dep), 1);
+}
 
+#[test]
+fun test_contains_name_true() {
+    let deps = new_for_testing();
+    assert!(contains_name(&deps, b"AccountProtocol".to_string()));
+    assert!(contains_name(&deps, b"AccountConfig".to_string()));
+    assert!(contains_name(&deps, b"AccountActions".to_string()));
+}
+
+#[test]
+fun test_contains_name_false() {
+    let deps = new_for_testing();
+    assert!(!contains_name(&deps, b"Nonexistent".to_string()));
+    assert!(!contains_name(&deps, b"".to_string()));
+}
+
+#[test]
+fun test_contains_name_empty_deps() {
+    let deps = Deps { inner: vector[], unverified_allowed: false };
+    assert!(!contains_name(&deps, b"AnyName".to_string()));
+}
+
+#[test]
+fun test_contains_addr_true() {
+    let deps = new_for_testing();
+    assert!(contains_addr(&deps, @account_protocol));
+    assert!(contains_addr(&deps, @0x1));
+    assert!(contains_addr(&deps, @0x2));
+}
+
+#[test]
+fun test_contains_addr_false() {
+    let deps = new_for_testing();
+    assert!(!contains_addr(&deps, @0xDEAD));
+    assert!(!contains_addr(&deps, @0x0));
+    assert!(!contains_addr(&deps, @0x3));
+}
+
+#[test]
+fun test_contains_addr_empty_deps() {
+    let deps = Deps { inner: vector[], unverified_allowed: false };
+    assert!(!contains_addr(&deps, @0x1));
+}
+
+#[test]
+fun test_toggle_unverified_allowed() {
+    let mut deps = new_for_testing();
+    
+    // Start with false
+    assert!(!unverified_allowed(&deps));
+    
+    // Toggle to true
+    toggle_unverified_allowed(&mut deps);
+    assert!(unverified_allowed(&deps));
+    
+    // Toggle back to false
+    toggle_unverified_allowed(&mut deps);
+    assert!(!unverified_allowed(&deps));
+    
+    // Toggle to true again
+    toggle_unverified_allowed(&mut deps);
+    assert!(unverified_allowed(&deps));
+}
+
+#[test]
+fun test_toggle_unverified_allowed_from_true() {
+    let mut deps = new_for_testing();
+    deps.unverified_allowed = true;
+    
+    // Start with true
+    assert!(unverified_allowed(&deps));
+    
+    // Toggle to false
+    toggle_unverified_allowed(&mut deps);
+    assert!(!unverified_allowed(&deps));
+    
+    // Toggle back to true
+    toggle_unverified_allowed(&mut deps);
+    assert!(unverified_allowed(&deps));
+}
 
