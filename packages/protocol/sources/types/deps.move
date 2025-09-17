@@ -232,7 +232,9 @@ public fun toggle_unverified_allowed_for_testing(deps: &mut Deps) {
 // === Unit Tests ===
 
 #[test_only]
-use sui::test_utils::{assert_eq, destroy};
+use std::unit_test::assert_eq;
+#[test_only]
+use sui::test_utils::destroy;
 
 #[test]
 fun test_inner_mut() {
@@ -246,9 +248,9 @@ fun test_inner_mut() {
     };
     let inner = inner_mut(&mut deps);
     
-    assert_eq(inner.length(), 3);
+    assert_eq!(inner.length(), 3);
     inner.push_back(Dep { name: b"NewDep".to_string(), addr: @0x3, version: 1 });
-    assert_eq(inner.length(), 4);
+    assert_eq!(inner.length(), 4);
     
     destroy(deps);
 }
@@ -288,9 +290,9 @@ fun test_get_by_idx() {
     let deps = new_for_testing();
     let dep = get_by_idx(&deps, 0);
     
-    assert_eq(dep.name, b"AccountProtocol".to_string());
-    assert_eq(dep.addr, @account_protocol);
-    assert_eq(dep.version, 1);
+    assert_eq!(dep.name, b"AccountProtocol".to_string());
+    assert_eq!(dep.addr, @account_protocol);
+    assert_eq!(dep.version, 1);
 }
 
 #[test]
@@ -298,9 +300,9 @@ fun test_get_by_name_success() {
     let deps = new_for_testing();
     let dep = get_by_name(&deps, b"AccountProtocol".to_string());
     
-    assert_eq(dep.name, b"AccountProtocol".to_string());
-    assert_eq(dep.addr, @account_protocol);
-    assert_eq(dep.version, 1);
+    assert_eq!(dep.name, b"AccountProtocol".to_string());
+    assert_eq!(dep.addr, @account_protocol);
+    assert_eq!(dep.version, 1);
 }
 
 #[test, expected_failure(abort_code = EDepNotFound)]
@@ -320,9 +322,9 @@ fun test_get_by_addr_success() {
     let deps = new_for_testing();
     let dep = get_by_addr(&deps, @account_protocol);
     
-    assert_eq(dep.name, b"AccountProtocol".to_string());
-    assert_eq(dep.addr, @account_protocol);
-    assert_eq(dep.version, 1);
+    assert_eq!(dep.name, b"AccountProtocol".to_string());
+    assert_eq!(dep.addr, @account_protocol);
+    assert_eq!(dep.version, 1);
 }
 
 #[test, expected_failure(abort_code = EDepNotFound)]
@@ -340,7 +342,7 @@ fun test_get_by_addr_zero_address() {
 #[test]
 fun test_length() {
     let deps = new_for_testing();
-    assert_eq(length(&deps), 3);
+    assert_eq!(length(&deps), 3);
 }
 
 #[test]
@@ -348,9 +350,9 @@ fun test_name_addr_version() {
     let deps = new_for_testing();
     let dep = get_by_idx(&deps, 0);
     
-    assert_eq(name(dep), b"AccountProtocol".to_string());
-    assert_eq(addr(dep), @account_protocol);
-    assert_eq(version(dep), 1);
+    assert_eq!(name(dep), b"AccountProtocol".to_string());
+    assert_eq!(addr(dep), @account_protocol);
+    assert_eq!(version(dep), 1);
 }
 
 #[test]

@@ -67,7 +67,7 @@ fun end(scenario: Scenario, extensions: Extensions, account: Account<Config>, cl
 #[test]
 fun test_edit_config_metadata() {
     let (scenario, extensions, mut account, clock) = start();    
-    assert!(account.metadata().size() == 0);
+    assert!(account.metadata().length() == 0);
 
     let auth = account.new_auth(version::current(), Witness());
     config::edit_metadata(

@@ -133,7 +133,7 @@ fun test_getters() {
 
     // check intent getters
     let intent1 = intents.get(b"one".to_string());
-    assert!(intent1.type_() == type_name::get<DummyIntent>());
+    assert!(intent1.type_() == type_name::with_defining_ids<DummyIntent>());
     assert!(intent1.key() == b"one".to_string());
     assert!(intent1.description() == b"".to_string());
     assert!(intent1.account() == @0xACC);

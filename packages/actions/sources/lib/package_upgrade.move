@@ -149,7 +149,7 @@ public fun is_package_managed<Config>(
     let index: &UpgradeIndex = account.borrow_managed_data(UpgradeIndexKey(), version::current());
     
     let mut i = 0;
-    while (i < index.packages_info.size()) {
+    while (i < index.packages_info.length()) {
         let (_, value) = index.packages_info.get_entry_by_idx(i);
         if (value == package_addr) return true;
         i = i + 1;
@@ -181,7 +181,7 @@ public fun get_package_name<Config>(
         if (addr == package_addr) break package_name;
         
         i = i + 1;
-        if (i == index.packages_info.size()) abort EPackageDoesntExist;
+        if (i == index.packages_info.length()) abort EPackageDoesntExist;
     };
     
     package_name

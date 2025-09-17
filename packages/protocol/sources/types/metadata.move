@@ -46,8 +46,8 @@ public fun get_entry_by_idx(metadata: &Metadata, idx: u64): (String, String) {
 }
 
 /// Returns the number of entries.
-public fun size(metadata: &Metadata): u64 {
-    metadata.inner.size()
+public fun length(metadata: &Metadata): u64 {
+    metadata.inner.length()
 }
 
 //**************************************************************************************************//
@@ -57,14 +57,16 @@ public fun size(metadata: &Metadata): u64 {
 // === Test Helpers ===
 
 #[test_only]
-use sui::test_utils::{assert_eq, destroy};
+use std::unit_test::assert_eq;
+#[test_only]
+use sui::test_utils::destroy;
 
 // === Unit Tests ===
 
 #[test]
 fun test_empty() {
     let metadata = empty();
-    assert_eq(size(&metadata), 0);
+    assert_eq!(length(&metadata), 0);
     destroy(metadata);
 }
 
@@ -74,9 +76,9 @@ fun test_from_keys_values() {
     let values = vector[b"value1".to_string(), b"value2".to_string()];
     
     let metadata = from_keys_values(keys, values);
-    assert_eq(size(&metadata), 2);
-    assert_eq(get(&metadata, b"key1".to_string()), b"value1".to_string());
-    assert_eq(get(&metadata, b"key2".to_string()), b"value2".to_string());
+    assert_eq!(length(&metadata), 2);
+    assert_eq!(get(&metadata, b"key1".to_string()), b"value1".to_string());
+    assert_eq!(get(&metadata, b"key2".to_string()), b"value2".to_string());
     
     destroy(metadata);
 }
@@ -97,7 +99,7 @@ fun test_get() {
     
     let metadata = from_keys_values(keys, values);
     let value = get(&metadata, b"test_key".to_string());
-    assert_eq(value, b"test_value".to_string());
+    assert_eq!(value, b"test_value".to_string());
     
     destroy(metadata);
 }
@@ -112,10 +114,10 @@ fun test_get_entry_by_idx() {
     let (key1, value1) = get_entry_by_idx(&metadata, 0);
     let (key2, value2) = get_entry_by_idx(&metadata, 1);
     
-    assert_eq(key1, b"key1".to_string());
-    assert_eq(value1, b"value1".to_string());
-    assert_eq(key2, b"key2".to_string());
-    assert_eq(value2, b"value2".to_string());
+    assert_eq!(key1, b"key1".to_string());
+    assert_eq!(value1, b"value1".to_string());
+    assert_eq!(key2, b"key2".to_string());
+    assert_eq!(value2, b"value2".to_string());
     
     destroy(metadata);
 }
@@ -123,12 +125,12 @@ fun test_get_entry_by_idx() {
 #[test]
 fun test_size() {
     let metadata = empty();
-    assert_eq(size(&metadata), 0);
+    assert_eq!(length(&metadata), 0);
     
     let keys = vector[b"key1".to_string()];
     let values = vector[b"value1".to_string()];
     let metadata2 = from_keys_values(keys, values);
-    assert_eq(size(&metadata2), 1);
+    assert_eq!(length(&metadata2), 1);
     
     destroy(metadata);
     destroy(metadata2);
@@ -140,10 +142,10 @@ fun test_multiple_entries() {
     let values = vector[b"Test Account".to_string(), b"A test account".to_string(), b"1.0".to_string()];
     
     let metadata = from_keys_values(keys, values);
-    assert_eq(size(&metadata), 3);
-    assert_eq(get(&metadata, b"name".to_string()), b"Test Account".to_string());
-    assert_eq(get(&metadata, b"description".to_string()), b"A test account".to_string());
-    assert_eq(get(&metadata, b"version".to_string()), b"1.0".to_string());
+    assert_eq!(length(&metadata), 3);
+    assert_eq!(get(&metadata, b"name".to_string()), b"Test Account".to_string());
+    assert_eq!(get(&metadata, b"description".to_string()), b"A test account".to_string());
+    assert_eq!(get(&metadata, b"version".to_string()), b"1.0".to_string());
     
     destroy(metadata);
 }

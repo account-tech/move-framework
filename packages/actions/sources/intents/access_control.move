@@ -88,5 +88,5 @@ public fun execute_return_cap<Config, Outcome: store, Cap: key + store>(
 // === Private functions ===
 
 fun type_name_to_string<T>(): String {
-    type_name::get<T>().into_string().to_string()
+    type_name::with_defining_ids<T>().into_string().to_string()
 }

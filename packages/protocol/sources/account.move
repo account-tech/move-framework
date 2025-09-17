@@ -30,7 +30,7 @@ use std::{
 };
 use sui::{
     transfer::Receiving,
-    clock::Clock, 
+    clock::Clock,
     dynamic_field as df,
     dynamic_object_field as dof,
     package,
@@ -38,7 +38,7 @@ use sui::{
 use account_protocol::{
     metadata::{Self, Metadata},
     deps::{Self, Deps},
-    version_witness::{Self, VersionWitness},
+    version_witness::VersionWitness,
     intents::{Self, Intents, Intent, Expired, Params},
     executable::{Self, Executable},
     version,
@@ -475,11 +475,11 @@ public(package) fun assert_is_config_module<Config, CW: drop>(
     _account: &Account<Config>, 
     _config_witness: CW
 ) {
-    let account_type = type_name::get<Config>();
-    let witness_type = type_name::get<CW>();
+    let account_type = type_name::with_defining_ids<Config>();
+    let witness_type = type_name::with_defining_ids<CW>();
     assert!(
-        account_type.get_address() == witness_type.get_address() &&
-        account_type.get_module() == witness_type.get_module(),
+        account_type.address_string() == witness_type.address_string() &&
+        account_type.module_string() == witness_type.module_string(),
         ENotCalledFromConfigModule
     );
 }
@@ -506,7 +506,10 @@ public fun not_config_witness(): Witness {
 // === Unit Tests ===
 
 #[test_only]
-use sui::test_utils::{assert_eq, destroy};
+use std::unit_test::assert_eq;
+#[test_only]
+use sui::test_utils::destroy;
+#[test_only]
 use account_extensions::extensions;
 
 #[test_only]
@@ -534,7 +537,7 @@ fun test_addr() {
     let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
     let account_addr = addr(&account);
     
-    assert_eq(account_addr, object::id(&account).to_address());
+    assert_eq!(account_addr, object::id(&account).to_address());
     destroy(account);
 }
 
@@ -578,15 +581,15 @@ fun test_managed_data_flow() {
     
     // Test borrow
     let borrowed_data = borrow_managed_data(&account, key, version::current());
-    assert_eq(*borrowed_data, data);
+    assert_eq!(*borrowed_data, data);
     
     // Test borrow_mut
     let borrowed_mut_data = borrow_managed_data_mut(&mut account, key, version::current());
-    assert_eq(*borrowed_mut_data, data);
+    assert_eq!(*borrowed_mut_data, data);
     
     // Test remove
     let removed_data = remove_managed_data(&mut account, key, version::current());
-    assert_eq(removed_data, data);
+    assert_eq!(removed_data, data);
     assert!(!has_managed_data(&account, key));
     destroy(account);
 }
@@ -658,11 +661,11 @@ fun test_managed_asset_flow() {
     
     // Test borrow
     let borrowed_asset = borrow_managed_asset<_, TestKey, TestAsset>(&account, key, version::current());
-    assert_eq(object::id(borrowed_asset), asset_id);
+    assert_eq!(object::id(borrowed_asset), asset_id);
     
     // Test remove
     let removed_asset = remove_managed_asset<_, TestKey, TestAsset>(&mut account, key, version::current());
-    assert_eq(object::id(&removed_asset), asset_id);
+    assert_eq!(object::id(&removed_asset), asset_id);
     assert!(!has_managed_asset(&account, key));
     destroy(account);
     destroy(removed_asset);
@@ -752,7 +755,7 @@ fun test_new_auth() {
     let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
     let auth = new_auth(&account, version::current(), TestWitness());
     
-    assert_eq(auth.account_addr, account.addr());
+    assert_eq!(auth.account_addr, account.addr());
     destroy(account);
     destroy(auth);
 }
@@ -765,7 +768,7 @@ fun test_metadata_access() {
     let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
     
     // Should not abort - just testing access
-    assert_eq(metadata(&account).size(), 0);
+    assert_eq!(metadata(&account).length(), 0);
     destroy(account);
 }
 

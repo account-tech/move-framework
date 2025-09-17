@@ -21,8 +21,8 @@ public struct VersionWitness has copy, drop {
 
 /// Creates a new VersionWitness for the package where the Witness is instianted.
 public fun new<PW: drop>(_package_witness: PW): VersionWitness {
-    let package_type = type_name::get<PW>();
-    let package_addr = address::from_bytes(hex::decode(package_type.get_address().into_bytes()));
+    let package_type = type_name::with_defining_ids<PW>();
+    let package_addr = address::from_bytes(hex::decode(package_type.address_string().into_bytes()));
 
     VersionWitness { package_addr }
 }

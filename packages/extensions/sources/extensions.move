@@ -136,7 +136,7 @@ public fun update(extensions: &mut Extensions, _: &AdminCap, name: String, addr:
     extensions.inner[idx].history.push_back(History { addr, version });
 }
 
-public entry fun new_admin(_: &AdminCap, recipient: address, ctx: &mut TxContext) {
+public fun new_admin(_: &AdminCap, recipient: address, ctx: &mut TxContext) {
     transfer::public_transfer(AdminCap { id: object::new(ctx) }, recipient);
 }
 

@@ -71,7 +71,9 @@ public(package) fun destroy<Outcome: store>(executable: Executable<Outcome>): In
 //**************************************************************************************************//
 
 #[test_only]
-use sui::test_utils::{assert_eq, destroy as test_destroy};
+use std::unit_test::assert_eq;
+#[test_only]
+use sui::test_utils::destroy as test_destroy;
 #[test_only]
 use sui::clock;
 #[test_only]
@@ -109,8 +111,8 @@ fun test_new_executable() {
     
     let executable = new(intent);
     
-    assert_eq(action_idx(&executable), 0);
-    assert_eq(intent(&executable).key(), b"test_key".to_string());
+    assert_eq!(action_idx(&executable), 0);
+    assert_eq!(intent(&executable).key(), b"test_key".to_string());
     
     test_destroy(executable);
     test_destroy(clock);
@@ -144,13 +146,13 @@ fun test_next_action() {
     
     let mut executable = new(intent);
     
-    assert_eq(action_idx(&executable), 0);
+    assert_eq!(action_idx(&executable), 0);
     
     let _action1: &TestAction = next_action(&mut executable, TestIntentWitness());
-    assert_eq(action_idx(&executable), 1);
+    assert_eq!(action_idx(&executable), 1);
     
     let _action2: &TestAction = next_action(&mut executable, TestIntentWitness());
-    assert_eq(action_idx(&executable), 2);
+    assert_eq!(action_idx(&executable), 2);
     
     test_destroy(executable);
     test_destroy(clock);
@@ -246,8 +248,8 @@ fun test_destroy_executable() {
     let executable = new(intent);
     let recovered_intent = destroy(executable);
     
-    assert_eq(recovered_intent.key(), b"test_key".to_string());
-    assert_eq(recovered_intent.description(), b"test_description".to_string());
+    assert_eq!(recovered_intent.key(), b"test_key".to_string());
+    assert_eq!(recovered_intent.description(), b"test_description".to_string());
     
     test_destroy(recovered_intent);
     test_destroy(clock);
@@ -283,15 +285,15 @@ fun test_executable_with_multiple_actions() {
     
     let mut executable = new(intent);
     
-    assert_eq(action_idx(&executable), 0);
-    assert_eq(intent(&executable).actions().length(), 3);
+    assert_eq!(action_idx(&executable), 0);
+    assert_eq!(intent(&executable).actions().length(), 3);
     
     // Execute all actions
     let _action1: &TestAction = next_action(&mut executable, TestIntentWitness());
     let _action2: &TestAction = next_action(&mut executable, TestIntentWitness());
     let _action3: &TestAction = next_action(&mut executable, TestIntentWitness());
     
-    assert_eq(action_idx(&executable), 3);
+    assert_eq!(action_idx(&executable), 3);
     
     test_destroy(executable);
     test_destroy(clock);
@@ -323,13 +325,13 @@ fun test_intent_access() {
     let executable = new(intent);
     let intent_ref = intent(&executable);
     
-    assert_eq(intent_ref.key(), b"test_key".to_string());
-    assert_eq(intent_ref.description(), b"test_description".to_string());
-    assert_eq(intent_ref.account(), @0xCAFE);
+    assert_eq!(intent_ref.key(), b"test_key".to_string());
+    assert_eq!(intent_ref.description(), b"test_description".to_string());
+    assert_eq!(intent_ref.account(), @0xCAFE);
     let mut role = @account_protocol.to_string();
     role.append_utf8(b"::executable");
     role.append_utf8(b"::test_role");
-    assert_eq(intent_ref.role(), role);
+    assert_eq!(intent_ref.role(), role);
     
     test_destroy(executable);
     test_destroy(clock);

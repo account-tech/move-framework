@@ -70,7 +70,7 @@ fun test_account_getters() {
     let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     assert!(account.addr() == object::id(&account).to_address());
-    assert!(account.metadata().size() == 0);
+    assert!(account.metadata().length() == 0);
     assert!(account.deps().contains_name(b"AccountProtocol".to_string()));
     assert!(account.intents().length() == 0);
     assert!(account.config() == Config {});
@@ -255,7 +255,7 @@ fun test_account_getters_mut() {
     let mut scenario = ts::begin(OWNER);
     let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
-    assert!(account.metadata_mut(version::current()).size() == 0);
+    assert!(account.metadata_mut(version::current()).length() == 0);
     assert!(account.deps_mut(version::current()).contains_name(b"AccountProtocol".to_string()));
     assert!(account.intents_mut(version::current(), Witness()).length() == 0);
     assert!(account.config_mut(version::current(), Witness()) == &mut Config {});

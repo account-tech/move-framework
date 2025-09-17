@@ -296,7 +296,7 @@ public fun assert_is_witness<Outcome, IW: drop>(
     intent: &Intent<Outcome>,
     _: IW,
 ) {
-    assert!(intent.type_ == type_name::get<IW>(), EWrongWitness);
+    assert!(intent.type_ == type_name::with_defining_ids<IW>(), EWrongWitness);
 }
 
 public use fun assert_expired_is_account as Expired.assert_is_account;
@@ -339,7 +339,7 @@ public(package) fun new_intent<Outcome, IW: drop>(
     id.delete();
 
     Intent<Outcome> { 
-        type_: type_name::get<IW>(),
+        type_: type_name::with_defining_ids<IW>(),
         key,
         description,
         account: account_addr,
@@ -399,10 +399,10 @@ public(package) fun destroy_intent<Outcome: store + drop>(
 // === Private functions ===
 
 fun new_role<IW: drop>(managed_name: String): String {
-    let intent_type = type_name::get<IW>();
-    let mut role = intent_type.get_address().to_string();
+    let intent_type = type_name::with_defining_ids<IW>();
+    let mut role = intent_type.address_string().to_string();
     role.append_utf8(b"::");
-    role.append(intent_type.get_module().to_string());
+    role.append(intent_type.module_string().to_string());
 
     if (!managed_name.is_empty()) {
         role.append_utf8(b"::");
@@ -417,7 +417,9 @@ fun new_role<IW: drop>(managed_name: String): String {
 //**************************************************************************************************//
 
 #[test_only]
-use sui::test_utils::{assert_eq, destroy};
+use std::unit_test::assert_eq;
+#[test_only]
+use sui::test_utils::destroy;
 #[test_only]
 use sui::clock;
 
@@ -444,11 +446,11 @@ fun test_new_params() {
         ctx
     );
     
-    assert_eq(params.key(), b"test_key".to_string());
-    assert_eq(params.description(), b"test_description".to_string());
-    assert_eq(params.execution_times(), vector[1000]);
-    assert_eq(params.expiration_time(), 2000);
-    assert_eq(params.creation_time(), 0);
+    assert_eq!(params.key(), b"test_key".to_string());
+    assert_eq!(params.description(), b"test_description".to_string());
+    assert_eq!(params.execution_times(), vector[1000]);
+    assert_eq!(params.expiration_time(), 2000);
+    assert_eq!(params.creation_time(), 0);
     
     destroy(params);
     destroy(clock);
@@ -467,10 +469,10 @@ fun test_new_params_with_rand_key() {
         ctx
     );
     
-    assert_eq(params.key(), key);
-    assert_eq(params.description(), b"test_description".to_string());
-    assert_eq(params.execution_times(), vector[1000]);
-    assert_eq(params.expiration_time(), 2000);
+    assert_eq!(params.key(), key);
+    assert_eq!(params.description(), b"test_description".to_string());
+    assert_eq!(params.execution_times(), vector[1000]);
+    assert_eq!(params.expiration_time(), 2000);
     
     destroy(params);
     destroy(clock);
@@ -533,13 +535,13 @@ fun test_new_intent() {
         ctx
     );
     
-    assert_eq(intent.key(), b"test_key".to_string());
-    assert_eq(intent.description(), b"test_description".to_string());
-    assert_eq(intent.account(), @0xCAFE);
-    assert_eq(intent.creation_time(), clock.timestamp_ms());
-    assert_eq(intent.execution_times(), vector[1000]);
-    assert_eq(intent.expiration_time(), 2000);
-    assert_eq(intent.actions().length(), 0);
+    assert_eq!(intent.key(), b"test_key".to_string());
+    assert_eq!(intent.description(), b"test_description".to_string());
+    assert_eq!(intent.account(), @0xCAFE);
+    assert_eq!(intent.creation_time(), clock.timestamp_ms());
+    assert_eq!(intent.execution_times(), vector[1000]);
+    assert_eq!(intent.expiration_time(), 2000);
+    assert_eq!(intent.actions().length(), 0);
     
     destroy(intent);
     destroy(clock);
@@ -569,10 +571,10 @@ fun test_add_action() {
     );
     
     add_action(&mut intent, TestAction {}, TestIntentWitness());
-    assert_eq(intent.actions().length(), 1);
+    assert_eq!(intent.actions().length(), 1);
     
     add_action(&mut intent, TestAction {}, TestIntentWitness());
-    assert_eq(intent.actions().length(), 2);
+    assert_eq!(intent.actions().length(), 2);
     
     destroy(intent);
     destroy(clock);
@@ -611,8 +613,8 @@ fun test_remove_action() {
     let action1: TestAction = remove_action(&mut expired);
     let action2: TestAction = remove_action(&mut expired);
     
-    assert_eq(expired.start_index, 2);
-    assert_eq(expired.actions().length(), 0);
+    assert_eq!(expired.start_index, 2);
+    assert_eq!(expired.actions().length(), 0);
     
     expired.destroy_empty();
     destroy(intents);
@@ -626,8 +628,8 @@ fun test_empty_intents() {
     let ctx = &mut tx_context::dummy();
     let intents = empty(ctx);
     
-    assert_eq(length(&intents), 0);
-    assert_eq(locked(&intents).size(), 0);
+    assert_eq!(length(&intents), 0);
+    assert_eq!(locked(&intents).length(), 0);
     assert!(!contains(&intents, b"test_key".to_string()));
     
     destroy(intents);
@@ -658,11 +660,11 @@ fun test_add_and_remove_intent() {
     );
     
     add_intent(&mut intents, intent);
-    assert_eq(length(&intents), 1);
+    assert_eq!(length(&intents), 1);
     assert!(contains(&intents, b"test_key".to_string()));
     
     let removed_intent = remove_intent<TestOutcome>(&mut intents, b"test_key".to_string());
-    assert_eq(length(&intents), 0);
+    assert_eq!(length(&intents), 0);
     assert!(!contains(&intents, b"test_key".to_string()));
     
     destroy(removed_intent);
@@ -793,15 +795,15 @@ fun test_pop_front_execution_time() {
         ctx
     );
     
-    assert_eq(intent.execution_times(), vector[1000, 2000, 3000]);
+    assert_eq!(intent.execution_times(), vector[1000, 2000, 3000]);
     
     let time1 = pop_front_execution_time(&mut intent);
-    assert_eq(time1, 1000);
-    assert_eq(intent.execution_times(), vector[2000, 3000]);
+    assert_eq!(time1, 1000);
+    assert_eq!(intent.execution_times(), vector[2000, 3000]);
     
     let time2 = pop_front_execution_time(&mut intent);
-    assert_eq(time2, 2000);
-    assert_eq(intent.execution_times(), vector[3000]);
+    assert_eq!(time2, 2000);
+    assert_eq!(intent.execution_times(), vector[3000]);
     
     destroy(intent);
     destroy(clock);
