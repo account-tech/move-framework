@@ -2,11 +2,10 @@
 
 [move]
 version = 3
-manifest_digest = "2A590D2E70875CA6B555E7690464F31560BA9EAA6F87BD752BDEA3D92B1768A7"
-deps_digest = "F9B494B64F0615AED0E98FC12A85B85ECD2BC5185C22D30E7F67786BB52E507C"
+manifest_digest = "377F9EE53F22978628A282568A60E434C11941D0426FF343C0167779B04EA03A"
+deps_digest = "060AD7E57DFB13104F21BE5F5C3759D03F0553FC3229247D9A7A6B45F50D03A3"
 dependencies = [
   { id = "AccountActions", name = "AccountActions" },
-  { id = "AccountMultisig", name = "AccountMultisig" },
   { id = "AccountProtocol", name = "AccountProtocol" },
   { id = "Sui", name = "Sui" },
 ]
@@ -27,16 +26,6 @@ id = "AccountExtensions"
 source = { local = "../packages/extensions" }
 
 dependencies = [
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
-id = "AccountMultisig"
-source = { local = "../packages/configs/multisig" }
-
-dependencies = [
-  { id = "AccountExtensions", name = "AccountExtensions" },
-  { id = "AccountProtocol", name = "AccountProtocol" },
   { id = "Sui", name = "Sui" },
 ]
 
@@ -70,6 +59,6 @@ dependencies = [
 ]
 
 [move.toolchain-version]
-compiler-version = "1.42.1"
+compiler-version = "1.56.1"
 edition = "2024.beta"
 flavor = "sui"

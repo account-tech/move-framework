@@ -15,10 +15,16 @@ use sui::{
 use account_protocol::{
     executable::Executable,
     account::{Account, Auth},
+    intents::{Params},
+    intent_interface,
 };
-use account_multisig::multisig::{Multisig, Approvals};
 use account_actions::package_upgrade;
 use account_examples::version;
+
+// === Aliases ===
+
+use fun intent_interface::build_intent as Account.build_intent;
+use fun intent_interface::process_intent as Account.process_intent;
 
 // === Structs ===
 
@@ -29,72 +35,81 @@ public struct FinalUpgradeIntent() has copy, drop;
 // === Public Functions ===
 
 /// step 1: propose an Upgrade by passing the digest of the package build
-public fun request_final_upgrade(
+public fun request_final_upgrade<Config, Outcome: store>(
     auth: Auth,
-    outcome: Approvals,
-    multisig: &mut Account<Multisig, Approvals>, 
-    key: String,
-    execution_time: u64,
-    expiration_time: u64,
-    description: String,
+    account: &mut Account<Config>,
+    params: Params,
+    outcome: Outcome,
     package_name: String,
     digest: vector<u8>,
-    clock: &Clock,
+    _clock: &Clock,
     ctx: &mut TxContext
 ) {
-    multisig.verify(auth);
+    account.verify(auth);
 
-    let mut intent = multisig.create_intent(
-        key,
-        description,
-        vector[execution_time],
-        expiration_time,
+    account.build_intent!(
+        params,
+        outcome, 
         b"".to_string(),
-        outcome,
         version::current(),
         FinalUpgradeIntent(),
-        ctx
+        ctx,
+        |intent, iw| {
+            // first we would like to upgrade
+            package_upgrade::new_upgrade(intent, package_name, digest, iw);
+            // then we would like to make the package immutable (destroy the upgrade cap)
+            package_upgrade::new_restrict(intent, package_name, 255, iw);
+        },
     );
-    // first we would like to upgrade
-    package_upgrade::new_upgrade(&mut intent, multisig, package_name, digest, clock, version::current(), FinalUpgradeIntent());
-    // then we would like to make the package immutable (destroy the upgrade cap)
-    package_upgrade::new_restrict(&mut intent, multisig, package_name, 255, version::current(), FinalUpgradeIntent());
-    // add the intent to the multisig
-    multisig.add_intent(intent, version::current(), FinalUpgradeIntent());
 }
 
 /// step 2: multiple members have to approve the intent (account_multisig::multisig::approve_intent)
 /// step 3: execute the intent and return the Executable (account_multisig::multisig::execute_intent)
 
 /// step 4: destroy Upgrade and return the UpgradeTicket for upgrading
-public fun execute_upgrade(
-    executable: &mut Executable,
-    multisig: &mut Account<Multisig, Approvals>,
+public fun execute_upgrade<Config, Outcome: store>(
+    executable: &mut Executable<Outcome>,
+    account: &mut Account<Config>,
     clock: &Clock,
 ): UpgradeTicket {
-    package_upgrade::do_upgrade(executable, multisig, clock, version::current(), FinalUpgradeIntent())
+    account.process_intent!(
+        executable, 
+        version::current(), 
+        FinalUpgradeIntent(), 
+        |executable, iw| package_upgrade::do_upgrade(executable, account, clock, version::current(), iw),
+    )
 } 
 
 /// Need to consume the ticket to upgrade the package before completing the intent.
 
 /// step 5: consume the receipt to commit the upgrade
-public fun complete_upgrade(
-    executable: Executable,
-    multisig: &mut Account<Multisig, Approvals>,
+public fun complete_upgrade<Config, Outcome: store>(
+    executable: &mut Executable<Outcome>,
+    account: &mut Account<Config>,
     receipt: UpgradeReceipt,
 ) {
-    package_upgrade::confirm_upgrade(&executable, multisig, receipt, version::current(), FinalUpgradeIntent());
-    multisig.confirm_execution(executable, version::current(), FinalUpgradeIntent());
+    account.process_intent!(
+        executable,
+        version::current(),
+        FinalUpgradeIntent(),
+        |executable, iw| package_upgrade::do_commit(executable, account, receipt, version::current(), iw)
+    );
 }
 
 /// step 6: restrict the upgrade policy (destroy the upgrade cap)
-public fun execute_restrict(
-    mut executable: Executable,
-    multisig: &mut Account<Multisig, Approvals>,
+public fun execute_restrict<Config, Outcome: store>(
+    executable: &mut Executable<Outcome>,
+    account: &mut Account<Config>,
 ) {
-    package_upgrade::do_restrict(&mut executable, multisig, version::current(), FinalUpgradeIntent());
-    multisig.confirm_execution(executable, version::current(), FinalUpgradeIntent());
+    account.process_intent!(
+        executable,
+        version::current(),
+        FinalUpgradeIntent(),
+        |executable, iw| package_upgrade::do_restrict(executable, account, version::current(), iw)
+    );
 }
 
-/// step 7: destroy the intent to get the Expired hot potato as there is no execution left
+/// step 7: destroy the executable with account_protocol::account::confirm_execution
+
+/// step 8: destroy the intent to get the Expired hot potato as there is no execution left
 /// and delete the actions from Expired in their own module 
