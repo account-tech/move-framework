@@ -63,7 +63,12 @@ public struct VestAction has store {
 // === Public Functions ===
 
 // Bearer of ClaimCap can claim the vesting.
-public fun claim<CoinType>(vesting: &mut Vesting<CoinType>, cap: &ClaimCap, clock: &Clock, ctx: &mut TxContext) {
+public fun claim<CoinType>(
+    vesting: &mut Vesting<CoinType>, 
+    cap: &ClaimCap, 
+    clock: &Clock, 
+    ctx: &mut TxContext
+): Coin<CoinType> {
     assert!(cap.vesting_id == vesting.id.to_inner(), EWrongStream);
     assert!(clock.timestamp_ms() > vesting.start_timestamp, ETooEarly);
     assert!(vesting.balance.value() != 0, EVestingOver);
@@ -76,11 +81,9 @@ public fun claim<CoinType>(vesting: &mut Vesting<CoinType>, cap: &ClaimCap, cloc
         
         if (duration_remaining != 0) vesting.balance.value() * duration_claimable / duration_remaining else 0
     };
-
-    let coin = coin::from_balance(vesting.balance.split(amount), ctx);
-    transfer::public_transfer(coin, vesting.recipient);
-
     vesting.last_claimed = clock.timestamp_ms();
+
+    coin::from_balance(vesting.balance.split(amount), ctx)
 }
 
 // Authorized address can cancel the vesting.

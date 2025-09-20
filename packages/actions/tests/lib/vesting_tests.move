@@ -95,19 +95,22 @@ fun test_create_vesting_claim_and_destroy() {
     );
 
     clock.increment_for_testing(1);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin1 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin1, OWNER);
     scenario.next_tx(OWNER);
     let coin1 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin1.value() == 1);
 
     clock.increment_for_testing(2);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin2 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin2, OWNER);
     scenario.next_tx(OWNER);
     let coin2 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin2.value() == 2);
     
     clock.increment_for_testing(3);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin3 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin3, OWNER);
     scenario.next_tx(OWNER);
     let coin3 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin3.value() == 3);
@@ -134,19 +137,22 @@ fun test_create_vesting_claim_and_cancel() {
     );
 
     clock.increment_for_testing(1);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin1 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin1, OWNER);
     scenario.next_tx(OWNER);
     let coin1 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin1.value() == 1);
 
     clock.increment_for_testing(2);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin2 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin2, OWNER);
     scenario.next_tx(OWNER);
     let coin2 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin2.value() == 2);
     
     clock.increment_for_testing(3);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin3 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin3, OWNER);
     scenario.next_tx(OWNER);
     let coin3 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin3.value() == 3);
@@ -174,7 +180,8 @@ fun test_create_vesting_claim_after_end() {
     );
 
     clock.increment_for_testing(10);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin, OWNER);
     vesting.destroy_empty();
     
     scenario.next_tx(OWNER);
@@ -200,11 +207,13 @@ fun test_create_vesting_claim_same_time() {
 
     clock.increment_for_testing(3);
     
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin1 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin1, OWNER);
     scenario.next_tx(OWNER);
     let coin1 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin1.value() == 3);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin2 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin2, OWNER);
     scenario.next_tx(OWNER);
     let coin2 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin2.value() == 0);
@@ -309,7 +318,8 @@ fun test_error_claim_wrong_vesting() {
     );
 
     clock.increment_for_testing(1);
-    vesting1.claim(&cap2, &clock, scenario.ctx());
+    let coin1 = vesting1.claim(&cap2, &clock, scenario.ctx());
+    transfer::public_transfer(coin1, OWNER);
 
     destroy(cap1);
     destroy(cap2);
@@ -330,7 +340,8 @@ fun test_error_claim_too_early() {
         scenario.ctx()
     );
 
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin, OWNER);
 
     destroy(cap);
     destroy(vesting);
@@ -351,11 +362,13 @@ fun test_error_vesting_over() {
 
     clock.increment_for_testing(6);
     
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin1 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin1, OWNER);
     scenario.next_tx(OWNER);
     let coin1 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin1.value() == 6);
-    vesting.claim(&cap, &clock, scenario.ctx());
+    let coin2 = vesting.claim(&cap, &clock, scenario.ctx());
+    transfer::public_transfer(coin2, OWNER);
     scenario.next_tx(OWNER);
     let coin2 = scenario.take_from_address<Coin<SUI>>(OWNER);
     assert!(coin2.value() == 0);
