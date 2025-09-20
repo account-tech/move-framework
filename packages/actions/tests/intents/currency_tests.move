@@ -212,7 +212,7 @@ fun test_request_execute_withdraw_and_burn() {
     // create cap, mint and transfer coin to Account
     let coin = cap.mint(5, scenario.ctx());
     assert!(cap.total_supply() == 5);
-    let coin_id = object::id(&coin);
+
     account.keep(coin);
     scenario.next_tx(OWNER);
     let receiving = ts::most_recent_receiving_ticket<Coin<CURRENCY_INTENTS_TESTS>>(&object::id(&account));
@@ -231,7 +231,6 @@ fun test_request_execute_withdraw_and_burn() {
         &mut account, 
         params,
         outcome, 
-        coin_id,
         5,
         scenario.ctx()
     );
@@ -241,7 +240,7 @@ fun test_request_execute_withdraw_and_burn() {
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    owned::delete_withdraw(&mut expired, &mut account);
+    owned::delete_withdraw_coin(&mut expired, &mut account);
     currency::delete_burn<CURRENCY_INTENTS_TESTS>(&mut expired);
     expired.destroy_empty();
 
@@ -561,7 +560,6 @@ fun test_error_new_burn_disabled() {
         &mut account, 
         params,
         Outcome {},
-        @0x1D.to_id(),
         5,
         scenario.ctx()
     );

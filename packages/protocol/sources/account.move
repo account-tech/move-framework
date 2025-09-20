@@ -454,22 +454,6 @@ public(package) fun receive<Config, T: key + store>(
     transfer::public_receive(&mut account.id, receiving)
 }
 
-/// Locks an object in the account, preventing it to be used in another intent.
-public(package) fun lock_object<Config>(
-    account: &mut Account<Config>, 
-    id: ID,
-) {
-    account.intents.lock(id);
-}
-
-/// Unlocks an object in the account, allowing it to be used in another intent.
-public(package) fun unlock_object<Config>(
-    account: &mut Account<Config>, 
-    id: ID,
-) {
-    account.intents.unlock(id);
-}
-
 /// Asserts that the function is called from the module defining the config of the account.
 public(package) fun assert_is_config_module<Config, CW: drop>(
     _account: &Account<Config>, 

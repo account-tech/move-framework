@@ -32,6 +32,10 @@ public struct WrongWitness() has drop;
 public struct Config has copy, drop, store {}
 public struct Outcome has copy, drop, store {}
 
+public struct Obj has key, store {
+    id: UID,
+}
+
 // === Helpers ===
 
 fun start(): (Scenario, Extensions, Account<Config>, Clock) {
@@ -61,6 +65,17 @@ fun end(scenario: Scenario, extensions: Extensions, account: Account<Config>, cl
     destroy(account);
     destroy(clock);
     ts::end(scenario);
+}
+
+fun send_object(addr: address, scenario: &mut Scenario): ID {
+    let uid = object::new(scenario.ctx());
+    let id = uid.to_inner();
+
+    let obj = Obj { id: uid };
+    transfer::public_transfer(obj, addr);
+    
+    scenario.next_tx(OWNER);
+    id
 }
 
 fun send_coin(addr: address, amount: u64, scenario: &mut Scenario): ID {
@@ -104,21 +119,69 @@ fun keep_coin(addr: address, amount: u64, scenario: &mut Scenario): ID {
     id
 }
 
+fun sui_type(): std::string::String {
+    std::type_name::with_defining_ids<SUI>().into_string().to_string()
+}
+
 // === Tests === 
 
 #[test]
-fun test_withdraw_flow() {
+fun test_withdraw_object_flow() {
+    let (mut scenario, extensions, mut account, clock) = start();
+    let key = b"dummy".to_string();
+
+    let id = send_object(account.addr(), &mut scenario);
+
+    let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
+    owned::new_withdraw_object(&mut intent, &mut account, id, DummyIntent());
+    account.insert_intent(intent, version::current(), DummyIntent());
+
+    let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
+    let obj = owned::do_withdraw_object<_, Outcome, Obj, _>(
+        &mut executable,
+        &mut account, 
+        ts::receiving_ticket_by_id<Obj>(id),
+        DummyIntent(),
+    );
+    account.confirm_execution(executable);
+
+    assert!(obj.id.to_inner() == id);
+    destroy(obj);
+    end(scenario, extensions, account, clock);
+}
+
+#[test]
+fun test_withdraw_object_expired() {
+    let (mut scenario, extensions, mut account, mut clock) = start();
+    clock.increment_for_testing(1);
+    let key = b"dummy".to_string();
+
+    let id = send_object(account.addr(), &mut scenario);
+
+    let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
+    owned::new_withdraw_object(&mut intent, &mut account, id, DummyIntent());
+    account.insert_intent(intent, version::current(), DummyIntent());
+    
+    let mut expired = account.delete_expired_intent<_, Outcome>(key, &clock);
+    owned::delete_withdraw_object(&mut expired, &mut account);
+    expired.destroy_empty();
+
+    end(scenario, extensions, account, clock);
+}
+
+#[test]
+fun test_withdraw_coin_flow() {
     let (mut scenario, extensions, mut account, clock) = start();
     let key = b"dummy".to_string();
 
     let id = send_coin(account.addr(), 5, &mut scenario);
 
     let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
-    owned::new_withdraw(&mut intent, &mut account, id, DummyIntent());
+    owned::new_withdraw_coin(&mut intent, &mut account, sui_type(), 5, DummyIntent());
     account.insert_intent(intent, version::current(), DummyIntent());
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
-    let coin = owned::do_withdraw<_, Outcome, Coin<SUI>, _>(
+    let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
         &mut executable,
         &mut account, 
         ts::receiving_ticket_by_id<Coin<SUI>>(id),
@@ -137,14 +200,14 @@ fun test_withdraw_expired() {
     clock.increment_for_testing(1);
     let key = b"dummy".to_string();
 
-    let id = send_coin(account.addr(), 5, &mut scenario);
+    let _id = send_coin(account.addr(), 5, &mut scenario);
 
     let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
-    owned::new_withdraw(&mut intent, &mut account, id, DummyIntent());
+    owned::new_withdraw_coin(&mut intent, &mut account, sui_type(), 5, DummyIntent());
     account.insert_intent(intent, version::current(), DummyIntent());
     
     let mut expired = account.delete_expired_intent<_, Outcome>(key, &clock);
-    owned::delete_withdraw(&mut expired, &mut account);
+    owned::delete_withdraw_coin(&mut expired, &mut account);
     expired.destroy_empty();
 
     end(scenario, extensions, account, clock);
@@ -218,18 +281,47 @@ fun test_error_do_withdraw_wrong_object() {
     let (mut scenario, extensions, mut account, clock) = start();
     let key = b"dummy".to_string();
 
-    let id = send_coin(account.addr(), 5, &mut scenario);
-    let not_id = send_coin(account.addr(), 5, &mut scenario);
+    let id = send_object(account.addr(), &mut scenario);
+    let not_id = send_object(account.addr(), &mut scenario);
 
     let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
-    owned::new_withdraw(&mut intent, &mut account, id, DummyIntent());
+    owned::new_withdraw_object(&mut intent, &mut account, id, DummyIntent());
     account.insert_intent(intent, version::current(), DummyIntent());
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
-    let coin = owned::do_withdraw<_, Outcome, Coin<SUI>, _>(
+    let obj = owned::do_withdraw_object<_, Outcome, Obj, _>(
         &mut executable,
         &mut account, 
-        ts::receiving_ticket_by_id<Coin<SUI>>(not_id),
+        ts::receiving_ticket_by_id<Obj>(not_id),
+        DummyIntent(),
+    );
+    account.confirm_execution(executable);
+
+    destroy(obj);
+    end(scenario, extensions, account, clock);
+}
+
+#[test, expected_failure(abort_code = owned::EWrongCoinType)]
+fun test_error_do_withdraw_wrong_coin_type() {
+    let (mut scenario, extensions, mut account, clock) = start();
+    let key = b"dummy".to_string();
+
+    let _id = send_coin(account.addr(), 5, &mut scenario);
+
+    let coin = coin::mint_for_testing<Witness>(5, scenario.ctx());
+    let id = object::id(&coin);
+    transfer::public_transfer(coin, account.addr());
+    scenario.next_tx(OWNER);
+
+    let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
+    owned::new_withdraw_coin(&mut intent, &mut account, sui_type(), 5, DummyIntent());
+    account.insert_intent(intent, version::current(), DummyIntent());
+
+    let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
+    let coin = owned::do_withdraw_coin<_, Outcome, Witness, _>(
+        &mut executable,
+        &mut account, 
+        ts::receiving_ticket_by_id<Coin<Witness>>(id),
         DummyIntent(),
     );
     account.confirm_execution(executable);
@@ -239,26 +331,30 @@ fun test_error_do_withdraw_wrong_object() {
     end(scenario, extensions, account, clock);
 }
 
-#[test, expected_failure(abort_code = owned::EObjectLocked)]
-fun test_error_merge_locked_coins() {
+#[test, expected_failure(abort_code = owned::EWrongAmount)]
+fun test_error_do_withdraw_wrong_coin_amount() {
     let (mut scenario, extensions, mut account, clock) = start();
-    let account_address = account.addr();
+    let key = b"dummy".to_string();
 
-    let id1 = keep_coin(account_address, 60, &mut scenario);
-    let id2 = keep_coin(account_address, 60, &mut scenario);
-    account.intents_mut(version::current(), Witness()).lock(id1);
+    let id = send_coin(account.addr(), 5, &mut scenario);
 
-    let auth = account.new_auth(version::current(), Witness());
-    let _ = owned::merge_and_split<Config, SUI>(
-        auth,
-        &mut account,
-        vector[ts::receiving_ticket_by_id(id1), ts::receiving_ticket_by_id(id2)],
-        vector[100],
-        scenario.ctx()
+    let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
+    owned::new_withdraw_coin(&mut intent, &mut account, sui_type(), 4, DummyIntent());
+    account.insert_intent(intent, version::current(), DummyIntent());
+
+    let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
+    let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
+        &mut executable,
+        &mut account, 
+        ts::receiving_ticket_by_id<Coin<SUI>>(id),
+        DummyIntent(),
     );
+    account.confirm_execution(executable);
 
-    end(scenario, extensions, account, clock);          
-}  
+    assert!(coin.value() == 5);
+    destroy(coin);
+    end(scenario, extensions, account, clock);
+}
 
 // sanity checks as these are tested in AccountProtocol tests
 
@@ -274,12 +370,12 @@ fun test_error_do_withdraw_from_wrong_account() {
 
     // intent is submitted to other account
     let mut intent = create_dummy_intent(&mut scenario, &account2, &clock);
-    owned::new_withdraw(&mut intent, &mut account, id, DummyIntent());
+    owned::new_withdraw_coin(&mut intent, &mut account, sui_type(), 5, DummyIntent());
     account2.insert_intent(intent, version::current(), DummyIntent());
 
     let (_, mut executable) = account2.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
     // try to disable from the account that didn't approve the intent
-    let coin = owned::do_withdraw<_, Outcome, Coin<SUI>, _>(
+    let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
         &mut executable, 
         &mut account, 
         ts::receiving_ticket_by_id<Coin<SUI>>(id),
@@ -300,12 +396,12 @@ fun test_error_do_withdraw_from_wrong_constructor_witness() {
     let id = send_coin(account.addr(), 5, &mut scenario);
 
     let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
-    owned::new_withdraw(&mut intent, &mut account, id, DummyIntent());
+    owned::new_withdraw_coin(&mut intent, &mut account, sui_type(), 5, DummyIntent());
     account.insert_intent(intent, version::current(), DummyIntent());
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
     // try to disable with the wrong witness that didn't approve the intent
-    let coin = owned::do_withdraw<_, Outcome, Coin<SUI>, _>(
+    let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
         &mut executable, 
         &mut account, 
         ts::receiving_ticket_by_id<Coin<SUI>>(id),
@@ -326,14 +422,14 @@ fun test_error_delete_withdraw_from_wrong_account() {
     clock.increment_for_testing(1);
     let key = b"dummy".to_string();
 
-    let id = send_coin(account.addr(), 5, &mut scenario);
+    let _id = send_coin(account.addr(), 5, &mut scenario);
 
     let mut intent = create_dummy_intent(&mut scenario, &account, &clock);
-    owned::new_withdraw(&mut intent, &mut account, id, DummyIntent());
+    owned::new_withdraw_coin(&mut intent, &mut account, sui_type(), 5, DummyIntent());
     account.insert_intent(intent, version::current(), DummyIntent());
     
     let mut expired = account.delete_expired_intent<_, Outcome>(key, &clock);
-    owned::delete_withdraw(&mut expired, &mut account2);
+    owned::delete_withdraw_coin(&mut expired, &mut account2);
     expired.destroy_empty();
 
     destroy(account2);

@@ -235,21 +235,6 @@ fun test_receive_object() {
 }
 
 #[test]
-fun test_lock_object() {
-    let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
-
-    assert!(!account.intents().locked().contains(&@0x1D.to_id()));
-    account.lock_object(@0x1D.to_id());
-    assert!(account.intents().locked().contains(&@0x1D.to_id()));
-    account.unlock_object(@0x1D.to_id());
-    assert!(!account.intents().locked().contains(&@0x1D.to_id()));
-
-    destroy(account);
-    ts::end(scenario);
-}
-
-#[test]
 #[allow(unused_mut_ref)]
 fun test_account_getters_mut() {
     let mut scenario = ts::begin(OWNER);

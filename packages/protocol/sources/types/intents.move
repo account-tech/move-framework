@@ -14,7 +14,6 @@ use std::{
 use sui::{
     bag::{Self, Bag},
     dynamic_field,
-    vec_set::{Self, VecSet},
     clock::Clock,
 };
 
@@ -27,15 +26,13 @@ use fun dynamic_field::remove as UID.df_remove;
 // === Errors ===
 
 const EIntentNotFound: u64 = 0;
-const EObjectAlreadyLocked: u64 = 1;
-const EObjectNotLocked: u64 = 2;
-const ENoExecutionTime: u64 = 3;
-const EExecutionTimesNotAscending: u64 = 4;
-const EActionsNotEmpty: u64 = 5;
-const EKeyAlreadyExists: u64 = 6;
-const EWrongAccount: u64 = 7;
-const EWrongWitness: u64 = 8;
-const ESingleExecution: u64 = 9;
+const ENoExecutionTime: u64 = 1;
+const EExecutionTimesNotAscending: u64 = 2;
+const EActionsNotEmpty: u64 = 3;
+const EKeyAlreadyExists: u64 = 4;
+const EWrongAccount: u64 = 5;
+const EWrongWitness: u64 = 6;
+const ESingleExecution: u64 = 7;
 
 // === Structs ===
 
@@ -43,8 +40,6 @@ const ESingleExecution: u64 = 9;
 public struct Intents has store {
     // map of intents: key -> Intent<Outcome>
     inner: Bag,
-    // ids of the objects that are being requested in intents, to avoid state changes
-    locked: VecSet<ID>,
 }
 
 /// Child struct, intent owning a sequence of actions requested to be executed
@@ -200,10 +195,6 @@ public fun length(intents: &Intents): u64 {
     intents.inner.length()
 }
 
-public fun locked(intents: &Intents): &VecSet<ID> {
-    &intents.locked
-}
-
 public fun contains(intents: &Intents, key: String): bool {
     intents.inner.contains(key)
 }
@@ -316,7 +307,7 @@ public fun assert_single_execution(params: &Params) {
 /// The following functions are only used in the `account` module
 
 public(package) fun empty(ctx: &mut TxContext): Intents {
-    Intents { inner: bag::new(ctx), locked: vec_set::empty() }
+    Intents { inner: bag::new(ctx) }
 }
 
 public(package) fun new_intent<Outcome, IW: drop>(
@@ -373,16 +364,6 @@ public(package) fun pop_front_execution_time<Outcome>(
     intent: &mut Intent<Outcome>,
 ): u64 {
     intent.execution_times.remove(0)
-}
-
-public(package) fun lock(intents: &mut Intents, id: ID) {
-    assert!(!intents.locked.contains(&id), EObjectAlreadyLocked);
-    intents.locked.insert(id);
-}
-
-public(package) fun unlock(intents: &mut Intents, id: ID) {
-    assert!(intents.locked.contains(&id), EObjectNotLocked);
-    intents.locked.remove(&id);
 }
 
 /// Removes an intent being executed if the execution_time is reached
@@ -629,7 +610,6 @@ fun test_empty_intents() {
     let intents = empty(ctx);
     
     assert_eq!(length(&intents), 0);
-    assert_eq!(locked(&intents).length(), 0);
     assert!(!contains(&intents, b"test_key".to_string()));
     
     destroy(intents);
@@ -729,46 +709,6 @@ fun test_remove_nonexistent_intent() {
     let removed_intent = remove_intent<TestOutcome>(&mut intents, b"nonexistent_key".to_string());
     
     destroy(removed_intent);
-    destroy(intents);
-}
-
-#[test]
-fun test_lock_and_unlock_object() {
-    let ctx = &mut tx_context::dummy();
-    let mut intents = empty(ctx);
-    let object_id = tx_context::fresh_object_address(ctx).to_id();
-    
-    assert!(!locked(&intents).contains(&object_id));
-    
-    lock(&mut intents, object_id);
-    assert!(locked(&intents).contains(&object_id));
-    
-    unlock(&mut intents, object_id);
-    assert!(!locked(&intents).contains(&object_id));
-    
-    destroy(intents);
-}
-
-#[test, expected_failure(abort_code = EObjectAlreadyLocked)]
-fun test_lock_already_locked_object() {
-    let ctx = &mut tx_context::dummy();
-    let mut intents = empty(ctx);
-    let object_id = tx_context::fresh_object_address(ctx).to_id();
-    
-    lock(&mut intents, object_id);
-    lock(&mut intents, object_id);
-    
-    destroy(intents);
-}
-
-#[test, expected_failure(abort_code = EObjectNotLocked)]
-fun test_unlock_not_locked_object() {
-    let ctx = &mut tx_context::dummy();
-    let mut intents = empty(ctx);
-    let object_id = tx_context::fresh_object_address(ctx).to_id();
-    
-    unlock(&mut intents, object_id);
-    
     destroy(intents);
 }
 
