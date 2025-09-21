@@ -117,17 +117,12 @@ public fun reorder_accounts<Config>(user: &mut User, addrs: vector<address>) {
     assert!(user.accounts.contains(&account_type), ENoAccountsToReorder);
 
     let accounts = user.accounts.get_mut(&account_type);
+    // there can never be duplicates in the first place (add_account asserts this) 
+    // we only need to check there is the same number of accounts and that all accounts are present
     assert!(accounts.length() == addrs.length(), EWrongNumberOfAccounts);
+    assert!(accounts.all!(|acc| addrs.contains(acc)), EAccountNotFound);
 
-    let mut new_order = vector[];
-    addrs.do!(|addr| {
-        let (exists, idx) = accounts.index_of(&addr);
-        assert!(exists, EAccountNotFound);
-        accounts.swap_remove(idx);
-        new_order.push_back(addr);
-    });
-
-    *accounts = new_order;
+    *accounts = addrs;
 }
 // === Config-only functions ===
 
