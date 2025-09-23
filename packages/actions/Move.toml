@@ -15,11 +15,6 @@ local = "../protocol"
 [dependencies.AccountExtensions]
 local = "../extensions"
 
-[dependencies.Sui]
-git = "https://github.com/MystenLabs/sui.git"
-subdir = "crates/sui-framework/packages/sui-framework"
-rev = "testnet"
-
 [addresses]
 account_actions = "0xf477dbfad6ab1de1fdcb6042c0afeda2aa5bf12eb7ef42d280059fc8d6c36c94"
 account_protocol = "0x10c87c29ea5d5674458652ababa246742a763f9deafed11608b7f0baea296484"
