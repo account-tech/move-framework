@@ -5,7 +5,6 @@ import * as TOML from "@iarna/toml";
 import * as path from "path";
 import { client, keypair, IObjectInfo, getId } from "./utils.js";
 import { execSync } from "child_process";
-import { initExtensions } from "./init-extensions.js";
 
 /// Package name must be in PascalCase and named address must be in snake_case in Move.toml
 /// Example: name = "AccountExtensions" -> "account_extensions" = "0x0"

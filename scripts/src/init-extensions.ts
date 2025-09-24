@@ -5,7 +5,7 @@ export async function initExtensions(): Promise<boolean> {
     console.log("\n🔧 Initializing extensions...");
     try {
         const tx = new Transaction();
-        tx.setGasBudget(10000000);
+        tx.setGasBudget(100000000);
 
         const pkg = getId("AccountExtensions");
 
