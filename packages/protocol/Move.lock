@@ -2,25 +2,14 @@
 
 [move]
 version = 3
-manifest_digest = "75F1A2D7B8DE6ECFA9F212D367FD38733BE2CE151841B116F2C152F62D139CEB"
+manifest_digest = "B044BA5FE20AB999D7A825BA9AF6C1B3B8CCAEC368ABF4FAD20BDFAB97FEA14B"
 deps_digest = "397E6A9F7A624706DBDFEE056CE88391A15876868FD18A88504DA74EB458D697"
 dependencies = [
-  { id = "AccountExtensions", name = "AccountExtensions" },
   { id = "Bridge", name = "Bridge" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "AccountExtensions"
-source = { local = "../extensions" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
+  { id = "account_extensions", name = "account_extensions" },
 ]
 
 [[move.package]]
@@ -54,10 +43,21 @@ dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
+[[move.package]]
+id = "account_extensions"
+source = { local = "../extensions" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
 [env]
 
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0xdbf6eb7acfe83ce0f26fd884ea77b1358395e85dac4c47effd4c50be4d810afc"
-latest-published-id = "0xdbf6eb7acfe83ce0f26fd884ea77b1358395e85dac4c47effd4c50be4d810afc"
+original-published-id = "0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145"
+latest-published-id = "0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145"
 published-version = "1"

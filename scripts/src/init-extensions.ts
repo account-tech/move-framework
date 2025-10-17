@@ -7,15 +7,15 @@ export async function initExtensions(): Promise<boolean> {
         const tx = new Transaction();
         tx.setGasBudget(100000000);
 
-        const pkg = getId("AccountExtensions");
+        const pkg = getId("account_extensions");
 
         tx.moveCall({
             target: `${pkg}::extensions::add`,
             arguments: [
                 tx.object(getId("extensions::Extensions")),
                 tx.object(getId("extensions::AdminCap")),
-                tx.pure.string("AccountProtocol"),
-                tx.pure.address(getId("AccountProtocol")),
+                tx.pure.string("account_protocol"),
+                tx.pure.address(getId("account_protocol")),
                 tx.pure.u64(1),
             ],
         });
@@ -25,8 +25,8 @@ export async function initExtensions(): Promise<boolean> {
             arguments: [
                 tx.object(getId("extensions::Extensions")),
                 tx.object(getId("extensions::AdminCap")),
-                tx.pure.string("AccountActions"),
-                tx.pure.address(getId("AccountActions")),
+                tx.pure.string("account_actions"),
+                tx.pure.address(getId("account_actions")),
                 tx.pure.u64(1),
             ],
         });
@@ -36,8 +36,8 @@ export async function initExtensions(): Promise<boolean> {
             arguments: [
                 tx.object(getId("extensions::Extensions")),
                 tx.object(getId("extensions::AdminCap")),
-                tx.pure.string("AccountMultisig"),
-                tx.pure.address(getId("AccountMultisig")),
+                tx.pure.string("account_multisig"),
+                tx.pure.address(getId("account_multisig")),
                 tx.pure.u64(1),
             ],
         });
@@ -47,8 +47,8 @@ export async function initExtensions(): Promise<boolean> {
             arguments: [
                 tx.object(getId("extensions::Extensions")),
                 tx.object(getId("extensions::AdminCap")),
-                tx.pure.string("AccountDao"),
-                tx.pure.address(getId("AccountDao")),
+                tx.pure.string("account_dao"),
+                tx.pure.address(getId("account_dao")),
                 tx.pure.u64(1),
             ],
         });

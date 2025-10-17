@@ -4,15 +4,15 @@
     "id": "0x0038c5a7dc8a89df8449775982973fbd31fa0e3892e60b740dd8bcb3dc51c613"
   },
   {
-    "type": "AccountDao",
-    "id": "0x3c47449fc69ab70485497b3a21720561b4775f514ee99576024e97422c54c4a8"
+    "type": "0x883d81a22a1bc11d8c67a3557daba818cbedadaca0d9fb8c5b9cd7893412e711::dao::Registry",
+    "id": "0x2ad350680fc2dcf79f5d5df0563c19cfa45a7b0a9f0991f8f9bb33de59bb04e0"
   },
   {
     "type": "0x2::package::UpgradeCap",
-    "id": "0x9e1637027ecd56fa789507667603d79113edc86d28f4e69483c52ad7fd0a226e"
+    "id": "0x66d31cd83e895a10821e173a0a090a9f1cc62badccc518fad03765beb4a18ace"
   },
   {
-    "type": "0x3c47449fc69ab70485497b3a21720561b4775f514ee99576024e97422c54c4a8::dao::Registry",
-    "id": "0xb5839853efdc80c99ae4c55c10b03bd83c8634e62cddf0c85ec41d3a20cf60f0"
+    "type": "account_dao",
+    "id": "0x883d81a22a1bc11d8c67a3557daba818cbedadaca0d9fb8c5b9cd7893412e711"
   }
 ]
