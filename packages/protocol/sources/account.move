@@ -37,11 +37,10 @@ use sui::{
 };
 use account_protocol::{
     metadata::{Self, Metadata},
-    deps::{Self, Deps},
+    deps::Deps,
     version_witness::VersionWitness,
     intents::{Self, Intents, Intent, Expired, Params},
     executable::{Self, Executable},
-    version,
 };
 
 // === Errors ===
@@ -495,6 +494,8 @@ use std::unit_test::assert_eq;
 use sui::test_utils::destroy;
 #[test_only]
 use account_extensions::extensions;
+#[test_only]
+use account_protocol::{version, deps};
 
 #[test_only]
 public struct TestConfig has copy, drop, store {}

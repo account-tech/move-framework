@@ -11,7 +11,7 @@ module account_protocol::deps;
 
 use std::string::String;
 use account_extensions::extensions::Extensions;
-use account_protocol::version_witness::{Self, VersionWitness};
+use account_protocol::version_witness::VersionWitness;
 
 // === Errors ===
 
@@ -235,6 +235,8 @@ public fun toggle_unverified_allowed_for_testing(deps: &mut Deps) {
 use std::unit_test::assert_eq;
 #[test_only]
 use sui::test_utils::destroy;
+#[test_only]
+use account_protocol::version_witness;
 
 #[test]
 fun test_inner_mut() {

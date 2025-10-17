@@ -9,10 +9,10 @@ git = "https://github.com/thounyy/apps.git"
 subdir = "kiosk"
 rev = "testnet"
 
-[dependencies.AccountProtocol]
+[dependencies.account_protocol]
 local = "../protocol"
 
-[dependencies.AccountExtensions]
+[dependencies.account_extensions]
 local = "../extensions"
 
 [addresses]

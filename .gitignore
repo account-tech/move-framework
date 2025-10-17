@@ -5,3 +5,4 @@ bun.lockb
 .idea
 .trace
 .coverage_map.mvcov
+package_summaries
