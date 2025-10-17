@@ -6,10 +6,6 @@ module account_protocol::owned;
 
 // === Imports ===
 
-use std::{
-    string::String,
-    type_name,
-};
 use sui::{
     coin::{Self, Coin},
     transfer::Receiving
@@ -24,7 +20,6 @@ use account_protocol::{
 
 const EWrongObject: u64 = 0;
 const EWrongAmount: u64 = 1;
-const EWrongCoinType: u64 = 2;
 
 // === Structs ===
 
@@ -34,9 +29,7 @@ public struct WithdrawObjectAction has store {
     object_id: ID,
 }
 /// Action guarding access to account owned coins which can only be received via this action
-public struct WithdrawCoinAction has store {
-    // the type of the coin we want to access
-    coin_type: String,
+public struct WithdrawCoinAction<phantom CoinType> has store {
     // the amount of the coin we want to access
     coin_amount: u64,
 }
@@ -76,15 +69,14 @@ public fun delete_withdraw_object<Config>(expired: &mut Expired, account: &mut A
 }
 
 /// Creates a new WithdrawObjectAction and add it to an intent
-public fun new_withdraw_coin<Config, Outcome, IW: drop>(
+public fun new_withdraw_coin<Config, Outcome, CoinType, IW: drop>(
     intent: &mut Intent<Outcome>, 
     account: &mut Account<Config>,
-    coin_type: String,
     coin_amount: u64,
     intent_witness: IW,
 ) {
     intent.assert_is_account(account.addr());
-    intent.add_action(WithdrawCoinAction { coin_type, coin_amount }, intent_witness);
+    intent.add_action(WithdrawCoinAction<CoinType> { coin_amount }, intent_witness);
 }
 
 /// Executes a WithdrawObjectAction and returns the object
@@ -96,22 +88,18 @@ public fun do_withdraw_coin<Config, Outcome: store, CoinType, IW: drop>(
 ): Coin<CoinType> {    
     executable.intent().assert_is_account(account.addr());
 
-    let action: &WithdrawCoinAction = executable.next_action(intent_witness);
+    let action: &WithdrawCoinAction<CoinType> = executable.next_action(intent_witness);
     let coin = account.receive(receiving);
 
     assert!(coin.value() == action.coin_amount, EWrongAmount);
-    assert!(
-        type_name::with_defining_ids<CoinType>().into_string().to_string() == action.coin_type, 
-        EWrongCoinType
-    );
 
     coin
 }
 
 /// Deletes a WithdrawObjectAction from an expired intent
-public fun delete_withdraw_coin<Config>(expired: &mut Expired, account: &mut Account<Config>) {
+public fun delete_withdraw_coin<Config, CoinType>(expired: &mut Expired, account: &mut Account<Config>) {
     expired.assert_is_account(account.addr());
-    let WithdrawCoinAction { .. } = expired.remove_action();
+    let WithdrawCoinAction<CoinType> { .. } = expired.remove_action();
 }
 
 // Coin operations

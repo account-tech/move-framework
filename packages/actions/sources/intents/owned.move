@@ -2,10 +2,7 @@ module account_actions::owned_intents;
 
 // === Imports ===
 
-use std::{
-    string::String,
-    type_name,
-};
+use std::string::String;
 use sui::{
     transfer::Receiving,
     coin::Coin,
@@ -70,7 +67,7 @@ public fun request_withdraw_and_transfer_to_vault<Config, Outcome: store, CoinTy
         WithdrawAndTransferToVaultIntent(),
         ctx,
         |intent, iw| {
-            owned::new_withdraw_coin(intent, account, type_name_to_string<CoinType>(), coin_amount, iw);
+            owned::new_withdraw_coin<_, _, CoinType, _>(intent, account, coin_amount, iw);
             vault::new_deposit<_, CoinType, _>(intent, vault_name, coin_amount, iw);
         }
     );
@@ -88,7 +85,7 @@ public fun execute_withdraw_and_transfer_to_vault<Config, Outcome: store, CoinTy
         WithdrawAndTransferToVaultIntent(),
         |executable, iw| {
             let object = owned::do_withdraw_coin(executable, account, receiving, iw);
-            vault::do_deposit<_, _, CoinType, _>(executable, account, object, version::current(), iw);
+            vault::do_deposit(executable, account, object, version::current(), iw);
         }
     );
 }
@@ -140,22 +137,18 @@ public fun execute_withdraw_object_and_transfer<Config, Outcome: store, T: key +
 }
 
 /// Creates a WithdrawCoinsAndTransferIntent and adds it to an Account.
-public fun request_withdraw_coins_and_transfer<Config, Outcome: store>(
+public fun request_withdraw_coin_and_transfer<Config, Outcome: store, CoinType>(
     auth: Auth,
     account: &mut Account<Config>, 
     params: Params,
     outcome: Outcome,
-    coin_types: vector<String>,
     coin_amounts: vector<u64>,
-    mut recipients: vector<address>,
+    recipients: vector<address>,
     ctx: &mut TxContext
 ) {
     account.verify(auth);
     params.assert_single_execution();
-    assert!(
-        coin_types.length() == coin_amounts.length() && coin_types.length() == recipients.length(), 
-        ECoinsRecipientsNotSameLength
-    );
+    assert!(coin_amounts.length() == recipients.length(), ECoinsRecipientsNotSameLength);
 
     intent_interface::build_intent!(
         account,
@@ -165,9 +158,8 @@ public fun request_withdraw_coins_and_transfer<Config, Outcome: store>(
         version::current(),
         WithdrawCoinsAndTransferIntent(),
         ctx,
-        |intent, iw| coin_types.zip_do!(coin_amounts, |coin_type, coin_amount| {
-            let recipient = recipients.remove(0);
-            owned::new_withdraw_coin(intent, account, coin_type, coin_amount, iw);
+        |intent, iw| coin_amounts.zip_do!(recipients, |coin_amount, recipient| {
+            owned::new_withdraw_coin<_, _, CoinType, _>(intent, account, coin_amount, iw);
             acc_transfer::new_transfer(intent, recipient, iw);
         })
     );
@@ -214,7 +206,7 @@ public fun request_withdraw_and_vest<Config, Outcome: store, CoinType>(
         WithdrawAndVestIntent(),
         ctx,
         |intent, iw| {
-            owned::new_withdraw_coin(intent, account, type_name_to_string<CoinType>(), coin_amount, iw);
+            owned::new_withdraw_coin<_, _, CoinType, _>(intent, account, coin_amount, iw);
             vesting::new_vest(intent, start_timestamp, end_timestamp, recipient, iw);
         }
     );
@@ -236,10 +228,4 @@ public fun execute_withdraw_and_vest<Config, Outcome: store, CoinType>(
             vesting::do_vest(executable, coin, iw, ctx);
         }
     );
-}
-
-// === Private functions ===
-
-fun type_name_to_string<T>(): String {
-    type_name::with_defining_ids<T>().into_string().to_string()
 }

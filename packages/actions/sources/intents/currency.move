@@ -272,7 +272,7 @@ public fun request_withdraw_and_burn<Config, Outcome: store, CoinType>(
         WithdrawAndBurnIntent(), 
         ctx,
         |intent, iw| {
-            owned::new_withdraw_coin(intent, account, type_name_to_string<CoinType>(), amount, iw);
+            owned::new_withdraw_coin<_, _, CoinType, _>(intent, account, amount, iw);
             currency::new_burn<_, CoinType, _>(intent, amount, iw);
         }
     );
@@ -291,7 +291,7 @@ public fun execute_withdraw_and_burn<Config, Outcome: store, CoinType>(
         WithdrawAndBurnIntent(),
         |executable, iw| {
             let coin = owned::do_withdraw_coin(executable, account, receiving, iw);
-            currency::do_burn<_, _, CoinType, _>(executable, account, coin, version::current(), iw);
+            currency::do_burn(executable, account, coin, version::current(), iw);
         }
     );
 }

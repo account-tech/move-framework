@@ -240,7 +240,7 @@ fun test_request_execute_withdraw_and_burn() {
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    owned::delete_withdraw_coin(&mut expired, &mut account);
+    owned::delete_withdraw_coin<_, CURRENCY_INTENTS_TESTS>(&mut expired, &mut account);
     currency::delete_burn<CURRENCY_INTENTS_TESTS>(&mut expired);
     expired.destroy_empty();
 

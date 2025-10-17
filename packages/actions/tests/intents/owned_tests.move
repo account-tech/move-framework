@@ -74,10 +74,6 @@ fun send_coin(addr: address, amount: u64, scenario: &mut Scenario): ID {
     id
 }
 
-fun type_name_to_string<T>(): std::string::String {
-    std::type_name::with_defining_ids<T>().into_string().to_string()
-}
-
 // === Tests ===
 
 #[test]
@@ -109,7 +105,7 @@ fun test_request_execute_transfer_to_vault() {
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    owned::delete_withdraw_coin(&mut expired, &mut account);
+    owned::delete_withdraw_coin<_, SUI>(&mut expired, &mut account);
     vault::delete_deposit<SUI>(&mut expired);
     expired.destroy_empty();
 
@@ -180,12 +176,11 @@ fun test_request_execute_transfer_coins() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    owned_intents::request_withdraw_coins_and_transfer<Config, Outcome>(
+    owned_intents::request_withdraw_coin_and_transfer<Config, Outcome, SUI>(
         auth, 
         &mut account, 
         params,
         outcome, 
-        vector[type_name_to_string<SUI>(), type_name_to_string<SUI>()],
         vector[1, 2],
         vector[@0x1, @0x2],
         scenario.ctx()
@@ -198,9 +193,9 @@ fun test_request_execute_transfer_coins() {
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    owned::delete_withdraw_coin(&mut expired, &mut account);
+    owned::delete_withdraw_coin<_, SUI>(&mut expired, &mut account);
     acc_transfer::delete_transfer(&mut expired);
-    owned::delete_withdraw_coin(&mut expired, &mut account);
+    owned::delete_withdraw_coin<_, SUI>(&mut expired, &mut account);
     acc_transfer::delete_transfer(&mut expired);
     expired.destroy_empty();
 
@@ -244,7 +239,7 @@ fun test_request_execute_vesting() {
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    owned::delete_withdraw_coin(&mut expired, &mut account);
+    owned::delete_withdraw_coin<_, SUI>(&mut expired, &mut account);
     vesting::delete_vest(&mut expired);
     expired.destroy_empty();
 
@@ -291,12 +286,11 @@ fun test_error_request_transfer_coins_not_same_length() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    owned_intents::request_withdraw_coins_and_transfer<Config, Outcome>(
+    owned_intents::request_withdraw_coin_and_transfer<Config, Outcome, SUI>(
         auth, 
         &mut account, 
         params,
         outcome, 
-        vector[type_name_to_string<SUI>()],
         vector[1, 2],
         vector[@0x1, @0x2],
         scenario.ctx()
