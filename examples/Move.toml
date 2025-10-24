@@ -4,8 +4,8 @@ edition = "2024.beta"
 
 [dependencies]
 Sui = { override = true, git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
-AccountProtocol = { local = "../packages/protocol" }
-AccountActions = { local = "../packages/actions" }
+account_protocol = { local = "../packages/protocol" }
+account_actions = { local = "../packages/actions" }
 
 [addresses]
 account_examples = "0x0"

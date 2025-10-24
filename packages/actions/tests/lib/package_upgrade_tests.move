@@ -43,10 +43,10 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, UpgradeCap) {
     let mut extensions = scenario.take_shared<Extensions>();
     let cap = scenario.take_from_sender<AdminCap>();
     // add core deps
-    extensions.add(&cap, b"AccountProtocol".to_string(), @account_protocol, 1);
-    extensions.add(&cap, b"AccountActions".to_string(), @account_actions, 1);
+    extensions.add(&cap, b"account_protocol".to_string(), @account_protocol, 1);
+    extensions.add(&cap, b"account_actions".to_string(), @account_actions, 1);
 
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let account = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     let upgrade_cap = package::test_publish(@0x1.to_id(), scenario.ctx());
@@ -255,12 +255,12 @@ fun test_restrict_expired() {
     end(scenario, extensions, account, clock);
 }
 
-// sanity checks as these are tested in AccountProtocol tests
+// sanity checks as these are tested in account_protocol tests
 
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_do_upgrade_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, upgrade_cap) = start();
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
@@ -317,7 +317,7 @@ fun test_error_do_upgrade_from_wrong_constructor_witness() {
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_confirm_upgrade_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, upgrade_cap) = start();
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
@@ -392,7 +392,7 @@ fun test_error_confirm_upgrade_from_wrong_constructor_witness() {
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_do_restrict_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, upgrade_cap) = start();
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 

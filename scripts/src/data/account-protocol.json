@@ -5,18 +5,18 @@
   },
   {
     "type": "0x2::package::UpgradeCap",
-    "id": "0x187067779abc788b683de32c5245df2f10d1823b8aa9c4f371a44a9ca4edb709"
+    "id": "0x468b385da6f94677cd058b22f617b7009b7455daf7a82f4d25278f643ed62635"
   },
   {
-    "type": "0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::user::Registry",
-    "id": "0x8ff880cf1c446e0958b25bbb6f268290e730927fe03d26d5687f7a6efb09fd81"
+    "type": "0xcababb3174ca41c616a691024e98e37379e15af969e56b5992fa8139c354c6f5::user::Registry",
+    "id": "0x65de95368029e4d82740fe6e04361e596b43b3be36850ca043a72ee702b4bb08"
   },
   {
     "type": "0x2::package::Publisher",
-    "id": "0xbfe4602bad06a097469eea37a20f812164ccf8910a4acc2f91e04017fa8ac8f2"
+    "id": "0x93795973ba60824539195f22e1cc51efeda21b30482bdc071d4883dd0e99636a"
   },
   {
     "type": "account_protocol",
-    "id": "0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145"
+    "id": "0xcababb3174ca41c616a691024e98e37379e15af969e56b5992fa8139c354c6f5"
   }
 ]

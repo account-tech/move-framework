@@ -8,5 +8,5 @@ authors = [ "Thouny (thouny@tuta.io)" ]
 local = "../extensions"
 
 [addresses]
-account_protocol = "0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145"
-account_extensions = "0x1d30bc47bb24a3d2171ac3049088ad1f7d29c0d6ff8bb899b64206c5ee543242"
+account_protocol = "0xcababb3174ca41c616a691024e98e37379e15af969e56b5992fa8139c354c6f5"
+account_extensions = "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347"

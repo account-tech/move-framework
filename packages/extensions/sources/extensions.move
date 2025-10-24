@@ -198,9 +198,9 @@ public fun update_for_testing(extensions: &mut Extensions, name: String, addr: a
 public fun new_for_testing_with_addrs(addr1: address, addr2: address, addr3: address, ctx: &mut TxContext): Extensions {
     let mut extensions = new_for_testing(ctx);
 
-    extensions.add_for_testing(b"AccountProtocol".to_string(), addr1, 1);
+    extensions.add_for_testing(b"account_protocol".to_string(), addr1, 1);
     extensions.add_for_testing(b"AccountConfig".to_string(), addr2, 1);
-    extensions.add_for_testing(b"AccountActions".to_string(), addr3, 1);
+    extensions.add_for_testing(b"account_actions".to_string(), addr3, 1);
 
     extensions
 }
@@ -239,16 +239,16 @@ fun test_getters() {
     let extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
 
     // assertions
-    assert!(extensions.is_extension(b"AccountProtocol".to_string(), @0x0, 1));
+    assert!(extensions.is_extension(b"account_protocol".to_string(), @0x0, 1));
     assert!(extensions.is_extension(b"AccountConfig".to_string(), @0x1, 1));
 
     assert!(extensions.length() == 3);
-    assert!(extensions.by_name(b"AccountProtocol".to_string())[0].addr() == @0x0);
-    assert!(extensions.by_name(b"AccountProtocol".to_string())[0].version() == 1);
+    assert!(extensions.by_name(b"account_protocol".to_string())[0].addr() == @0x0);
+    assert!(extensions.by_name(b"account_protocol".to_string())[0].version() == 1);
     assert!(extensions.by_name(b"AccountConfig".to_string())[0].addr() == @0x1);
     assert!(extensions.by_name(b"AccountConfig".to_string())[0].version() == 1);
-    assert!(extensions.by_name(b"AccountActions".to_string())[0].addr() == @0x2);
-    assert!(extensions.by_name(b"AccountActions".to_string())[0].version() == 1);
+    assert!(extensions.by_name(b"account_actions".to_string())[0].addr() == @0x2);
+    assert!(extensions.by_name(b"account_actions".to_string())[0].version() == 1);
 
     destroy(extensions);
 }
@@ -258,26 +258,26 @@ fun test_get_latest_for_name() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
 
-    let (addr, version) = extensions.get_latest_for_name(b"AccountProtocol".to_string());
+    let (addr, version) = extensions.get_latest_for_name(b"account_protocol".to_string());
     assert!(addr == @0x0);
     assert!(version == 1);
     let (addr, version) = extensions.get_latest_for_name(b"AccountConfig".to_string());
     assert!(addr == @0x1);
     assert!(version == 1);
-    let (addr, version) = extensions.get_latest_for_name(b"AccountActions".to_string());
+    let (addr, version) = extensions.get_latest_for_name(b"account_actions".to_string());
     assert!(addr == @0x2);
     assert!(version == 1);
     // update
     extensions.update(&cap, b"AccountConfig".to_string(), @0x11, 2);
-    extensions.update(&cap, b"AccountActions".to_string(), @0x21, 2);
-    extensions.update(&cap, b"AccountActions".to_string(), @0x22, 3);
-    let (addr, version) = extensions.get_latest_for_name(b"AccountProtocol".to_string());
+    extensions.update(&cap, b"account_actions".to_string(), @0x21, 2);
+    extensions.update(&cap, b"account_actions".to_string(), @0x22, 3);
+    let (addr, version) = extensions.get_latest_for_name(b"account_protocol".to_string());
     assert!(addr == @0x0);
     assert!(version == 1);
     let (addr, version) = extensions.get_latest_for_name(b"AccountConfig".to_string());
     assert!(addr == @0x11);
     assert!(version == 2);
-    let (addr, version) = extensions.get_latest_for_name(b"AccountActions".to_string());
+    let (addr, version) = extensions.get_latest_for_name(b"account_actions".to_string());
     assert!(addr == @0x22);
     assert!(version == 3);
 
@@ -290,32 +290,32 @@ fun test_is_extension() {
     let extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
 
-    let (addr, version) = extensions.get_latest_for_name(b"AccountProtocol".to_string());
+    let (addr, version) = extensions.get_latest_for_name(b"account_protocol".to_string());
     assert!(addr == @0x0);
     assert!(version == 1);
     let (addr, version) = extensions.get_latest_for_name(b"AccountConfig".to_string());
     assert!(addr == @0x1);
     assert!(version == 1);
-    let (addr, version) = extensions.get_latest_for_name(b"AccountActions".to_string());
+    let (addr, version) = extensions.get_latest_for_name(b"account_actions".to_string());
     assert!(addr == @0x2);
     assert!(version == 1);
 
     // correct extensions
-    assert!(extensions.is_extension(b"AccountProtocol".to_string(), @0x0, 1));
+    assert!(extensions.is_extension(b"account_protocol".to_string(), @0x0, 1));
     assert!(extensions.is_extension(b"AccountConfig".to_string(), @0x1, 1));
-    assert!(extensions.is_extension(b"AccountActions".to_string(), @0x2, 1));
+    assert!(extensions.is_extension(b"account_actions".to_string(), @0x2, 1));
     // incorrect names
     assert!(!extensions.is_extension(b"AccountProtoco".to_string(), @0x0, 1));
     assert!(!extensions.is_extension(b"AccountConfi".to_string(), @0x1, 1));
     assert!(!extensions.is_extension(b"AccountAction".to_string(), @0x2, 1));
     // incorrect addresses
-    assert!(!extensions.is_extension(b"AccountProtocol".to_string(), @0x1, 1));
+    assert!(!extensions.is_extension(b"account_protocol".to_string(), @0x1, 1));
     assert!(!extensions.is_extension(b"AccountConfig".to_string(), @0x0, 1));
-    assert!(!extensions.is_extension(b"AccountActions".to_string(), @0x0, 1));
+    assert!(!extensions.is_extension(b"account_actions".to_string(), @0x0, 1));
     // incorrect versions
-    assert!(!extensions.is_extension(b"AccountProtocol".to_string(), @0x0, 2));
+    assert!(!extensions.is_extension(b"account_protocol".to_string(), @0x0, 2));
     assert!(!extensions.is_extension(b"AccountConfig".to_string(), @0x1, 2));
-    assert!(!extensions.is_extension(b"AccountActions".to_string(), @0x2, 2));
+    assert!(!extensions.is_extension(b"account_actions".to_string(), @0x2, 2));
 
     destroy(extensions);
     destroy(cap);
@@ -361,12 +361,12 @@ fun test_update_deps() {
     assert!(extensions.by_name(b"C".to_string())[2].version() == 3);
     // verify core deps didn't change    
     assert!(extensions.length() == 6);
-    assert!(extensions.by_name(b"AccountProtocol".to_string())[0].addr() == @0x0);
-    assert!(extensions.by_name(b"AccountProtocol".to_string())[0].version() == 1);
+    assert!(extensions.by_name(b"account_protocol".to_string())[0].addr() == @0x0);
+    assert!(extensions.by_name(b"account_protocol".to_string())[0].version() == 1);
     assert!(extensions.by_name(b"AccountConfig".to_string())[0].addr() == @0x1);
     assert!(extensions.by_name(b"AccountConfig".to_string())[0].version() == 1);
-    assert!(extensions.by_name(b"AccountActions".to_string())[0].addr() == @0x2);
-    assert!(extensions.by_name(b"AccountActions".to_string())[0].version() == 1);
+    assert!(extensions.by_name(b"account_actions".to_string())[0].addr() == @0x2);
+    assert!(extensions.by_name(b"account_actions".to_string())[0].version() == 1);
 
     destroy(extensions);
     destroy(cap);
@@ -418,7 +418,7 @@ fun test_new_admin() {
 fun test_error_add_extension_name_already_exists() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
-    extensions.add(&cap, b"AccountProtocol".to_string(), @0xA, 1);
+    extensions.add(&cap, b"account_protocol".to_string(), @0xA, 1);
     destroy(extensions);
     destroy(cap);
 }

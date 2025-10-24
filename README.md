@@ -83,7 +83,7 @@ The Move code has been designed to be highly modular. There are currently 3 pack
 
 #### Extensions
 
-Since anyone can create modules to extend the protocol, smart accounts have to explicitly declare which package (dependency) is authorized to modify its state. For this reason, there is an `AccountExtensions` package which is managing an `Extensions` object tracking allowed packages and their different versions. 
+Since anyone can create modules to extend the protocol, smart accounts have to explicitly declare which package (dependency) is authorized to modify its state. For this reason, there is an `account_extensions` package which is managing an `Extensions` object tracking allowed packages and their different versions. 
 
 Due to the immutable nature of packages, Accounts must also explicitly migrate to the new version of a package they wish to use. So unlike on other chains, malicious code can't be added to a smart account without the account members' consent.
 
@@ -91,7 +91,7 @@ Each Account can opt-in to authorize "unverified deps" which are packages that a
 
 #### Protocol
 
-The `AccountProtocol` package is handling the `Account` logic and the intent process. The `Account` object encapsulates 3 custom types managing its dependencies, metadata (incl. name) and intents.
+The `account_protocol` package is handling the `Account` logic and the intent process. The `Account` object encapsulates 3 custom types managing its dependencies, metadata (incl. name) and intents.
 
 The metadata and dependencies can only be accessed mutably via an action defined in this same package and that must be wrapped into an intent. The intents can only be handled within the module that defines the Account `Config` type. This ensures that the Account state can't be modified without proper intent resolution.
 
@@ -99,7 +99,7 @@ Dynamic fields can freely be added to the `Account` object by any module. It is 
 
 #### Actions
 
-The `AccountActions` package defines a collection of actions that corresponds to unit on-chain operations. They can not be used as is but are meant to be used as building blocks to compose intents.
+The `account_actions` package defines a collection of actions that corresponds to unit on-chain operations. They can not be used as is but are meant to be used as building blocks to compose intents.
 
 Based on these actions, multiple intents are defined and can be used with any `Account` `Config` type.
 
@@ -152,15 +152,15 @@ Create new actions by defining structs with store only ability carrying the data
 
 The project is splitted in multiple packages to improve the security. Indeed, some packages have no external dependency so they are less vulnerable and don't necessitate forced upgrades because of third party packages. 
 
-`AccountExtensions` could be made immutable to guarantee `Extension` can't be compromised.
+`account_extensions` could be made immutable to guarantee `Extension` can't be compromised.
 
-Furthermore, the `AccountProtocol` shouldn't need to be upgraded since its functionalities will not change except with a major evolution of the protocol. It provides two modules with sensitive actions:
+Furthermore, the `account_protocol` shouldn't need to be upgraded since its functionalities will not change except with a major evolution of the protocol. It provides two modules with sensitive actions:
 
 1. **Config**: Enables the modification of the Account Metadata. It also handles the management of the Account dependencies.
 
 2. **Owned**: Manages access to objects owned by the Account, allowing them to be withdrawn through intents. Withdrawn objects can be used in transfers, vestings and anything else.
 
-`AccountActions` consists of several modules, with several actions and intents, each handling different aspects of the smart account functionality:
+`account_actions` consists of several modules, with several actions and intents, each handling different aspects of the smart account functionality:
 
 1. **Access Control**: Lock Caps into the Account and borrow them upon intent execution.
 

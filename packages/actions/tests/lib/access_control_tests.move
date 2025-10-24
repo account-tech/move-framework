@@ -46,10 +46,10 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock) {
     let mut extensions = scenario.take_shared<Extensions>();
     let cap = scenario.take_from_sender<AdminCap>();
     // add core deps
-    extensions.add(&cap, b"AccountProtocol".to_string(), @account_protocol, 1);
-    extensions.add(&cap, b"AccountActions".to_string(), @account_actions, 1);
+    extensions.add(&cap, b"account_protocol".to_string(), @account_protocol, 1);
+    extensions.add(&cap, b"account_actions".to_string(), @account_actions, 1);
 
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let account = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create world
@@ -189,7 +189,7 @@ fun test_error_return_to_wrong_account() {
 
     let cap = access_control::do_borrow<_, _, Cap, _>(&mut executable, &mut account, version::current(), DummyIntent());
     // create other account
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
     access_control::do_return(&mut executable, &mut account2, cap, version::current(), DummyIntent());
     account.confirm_execution(executable);
@@ -198,7 +198,7 @@ fun test_error_return_to_wrong_account() {
     end(scenario, extensions, account, clock);
 }
 
-// sanity checks as these are tested in AccountProtocol tests
+// sanity checks as these are tested in account_protocol tests
 
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_do_access_from_wrong_account() {
@@ -215,7 +215,7 @@ fun test_error_do_access_from_wrong_account() {
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
     // create other account and lock same type of cap
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
     let auth = account2.new_auth(version::current(), Witness());
     access_control::lock_cap(auth, &mut account2, cap(&mut scenario));

@@ -31,11 +31,11 @@ git checkout -b feature-branch-name
 ### Prerequisites
 1. [Install Sui](https://docs.sui.io/guides/developer/getting-started/sui-install) and ensure it's running.
 2. Publish the [Kiosk Package](https://github.com/MystenLabs/apps).
-3. Update its address in the AccountActions package manifest [file](/packages/actions/Move.toml).
+3. Update its address in the account_actions package manifest [file](/packages/actions/Move.toml).
 
 Set the required environment variables in [scripts](/scripts)/.env (create from `.env.example`) or provide them when prompted.
 
-To publish **AccountExtensions**, **AccountProtocol**, and **AccountActions** packages, simply execute:
+To publish **account_extensions**, **account_protocol**, and **account_actions** packages, simply execute:
 
 ```sh
 ./publish

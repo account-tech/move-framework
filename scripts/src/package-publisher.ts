@@ -7,7 +7,7 @@ import { client, keypair, IObjectInfo, getId } from "./utils.js";
 import { execSync } from "child_process";
 
 /// Package name must be in PascalCase and named address must be in snake_case in Move.toml
-/// Example: name = "AccountExtensions" -> "account_extensions" = "0x0"
+/// Example: name = "account_extensions" -> "account_extensions" = "0x0"
 
 interface Package {
 	name: string;

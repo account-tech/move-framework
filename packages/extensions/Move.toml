@@ -5,4 +5,4 @@ license = "Apache-2.0"
 authors = [ "Thouny (thouny@tuta.io)" ]
 
 [addresses]
-account_extensions = "0x1d30bc47bb24a3d2171ac3049088ad1f7d29c0d6ff8bb899b64206c5ee543242"
+account_extensions = "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347"

@@ -1,6 +1,6 @@
 /// Dependencies are the packages that an Account object can call.
 /// They are stored in a vector and can be modified through an intent.
-/// AccountProtocol is the only mandatory dependency, found at index 0.
+/// account_protocol is the only mandatory dependency, found at index 0.
 /// 
 /// For improved security, we provide a whitelist of allowed packages in Extensions.
 /// If unverified_allowed is false, then only these packages can be added.
@@ -44,7 +44,7 @@ public struct Dep has copy, drop, store {
 
 // === Public functions ===
 
-/// Creates a new Deps struct, AccountProtocol must be the first dependency.
+/// Creates a new Deps struct, account_protocol must be the first dependency.
 public fun new(
     extensions: &Extensions,
     unverified_allowed: bool,
@@ -54,12 +54,12 @@ public fun new(
 ): Deps {
     assert!(names.length() == addresses.length() && addresses.length() == versions.length(), EDepsNotSameLength);
     assert!(
-        names[0] == b"AccountProtocol".to_string() &&
+        names[0] == b"account_protocol".to_string() &&
         extensions.is_extension(names[0], addresses[0], versions[0]), 
         EAccountProtocolMissing
     );
     // second dependency must be AccountConfig (we don't know the name)
-    assert!(names[1] != b"AccountActions".to_string(), EAccountConfigMissing);
+    assert!(names[1] != b"account_actions".to_string(), EAccountConfigMissing);
 
     let mut inner = vector<Dep>[];
 
@@ -83,7 +83,7 @@ public fun new_latest_extensions(
     extensions: &Extensions,
     names: vector<String>,
 ): Deps {
-    assert!(names[0] == b"AccountProtocol".to_string(), EAccountProtocolMissing);
+    assert!(names[0] == b"account_protocol".to_string(), EAccountProtocolMissing);
 
     let mut inner = vector<Dep>[];
 
@@ -105,9 +105,9 @@ public fun new_inner(
     mut versions: vector<u64>,
 ): vector<Dep> {
     assert!(names.length() == addresses.length() && addresses.length() == versions.length(), EDepsNotSameLength);
-    // AccountProtocol is mandatory and cannot be removed
+    // account_protocol is mandatory and cannot be removed
     assert!(
-        names[0] == b"AccountProtocol".to_string() &&
+        names[0] == b"account_protocol".to_string() &&
         extensions.is_extension(names[0], addresses[0], versions[0]), 
         EAccountProtocolMissing
     );
@@ -216,9 +216,9 @@ public(package) fun toggle_unverified_allowed(deps: &mut Deps) {
 public fun new_for_testing(): Deps {
     Deps {
         inner: vector[
-            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"account_protocol".to_string(), addr: @account_protocol, version: 1 },
             Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
-            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+            Dep { name: b"account_actions".to_string(), addr: @0x2, version: 1 }
         ],
         unverified_allowed: false
     }
@@ -242,9 +242,9 @@ use account_protocol::version_witness;
 fun test_inner_mut() {
     let mut deps = Deps {
         inner: vector[
-            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"account_protocol".to_string(), addr: @account_protocol, version: 1 },
             Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
-            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+            Dep { name: b"account_actions".to_string(), addr: @0x2, version: 1 }
         ],
         unverified_allowed: false
     };
@@ -261,9 +261,9 @@ fun test_inner_mut() {
 fun test_check_success() {
     let deps = Deps {
         inner: vector[
-            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"account_protocol".to_string(), addr: @account_protocol, version: 1 },
             Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
-            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+            Dep { name: b"account_actions".to_string(), addr: @0x2, version: 1 }
         ],
         unverified_allowed: false
     };
@@ -276,9 +276,9 @@ fun test_check_success() {
 fun test_check_failure() {
     let deps = Deps {
         inner: vector[
-            Dep { name: b"AccountProtocol".to_string(), addr: @account_protocol, version: 1 },
+            Dep { name: b"account_protocol".to_string(), addr: @account_protocol, version: 1 },
             Dep { name: b"AccountConfig".to_string(), addr: @0x1, version: 1 },
-            Dep { name: b"AccountActions".to_string(), addr: @0x2, version: 1 }
+            Dep { name: b"account_actions".to_string(), addr: @0x2, version: 1 }
         ],
         unverified_allowed: false
     };
@@ -292,7 +292,7 @@ fun test_get_by_idx() {
     let deps = new_for_testing();
     let dep = get_by_idx(&deps, 0);
     
-    assert_eq!(dep.name, b"AccountProtocol".to_string());
+    assert_eq!(dep.name, b"account_protocol".to_string());
     assert_eq!(dep.addr, @account_protocol);
     assert_eq!(dep.version, 1);
 }
@@ -300,9 +300,9 @@ fun test_get_by_idx() {
 #[test]
 fun test_get_by_name_success() {
     let deps = new_for_testing();
-    let dep = get_by_name(&deps, b"AccountProtocol".to_string());
+    let dep = get_by_name(&deps, b"account_protocol".to_string());
     
-    assert_eq!(dep.name, b"AccountProtocol".to_string());
+    assert_eq!(dep.name, b"account_protocol".to_string());
     assert_eq!(dep.addr, @account_protocol);
     assert_eq!(dep.version, 1);
 }
@@ -324,7 +324,7 @@ fun test_get_by_addr_success() {
     let deps = new_for_testing();
     let dep = get_by_addr(&deps, @account_protocol);
     
-    assert_eq!(dep.name, b"AccountProtocol".to_string());
+    assert_eq!(dep.name, b"account_protocol".to_string());
     assert_eq!(dep.addr, @account_protocol);
     assert_eq!(dep.version, 1);
 }
@@ -352,7 +352,7 @@ fun test_name_addr_version() {
     let deps = new_for_testing();
     let dep = get_by_idx(&deps, 0);
     
-    assert_eq!(name(dep), b"AccountProtocol".to_string());
+    assert_eq!(name(dep), b"account_protocol".to_string());
     assert_eq!(addr(dep), @account_protocol);
     assert_eq!(version(dep), 1);
 }
@@ -360,9 +360,9 @@ fun test_name_addr_version() {
 #[test]
 fun test_contains_name_true() {
     let deps = new_for_testing();
-    assert!(contains_name(&deps, b"AccountProtocol".to_string()));
+    assert!(contains_name(&deps, b"account_protocol".to_string()));
     assert!(contains_name(&deps, b"AccountConfig".to_string()));
-    assert!(contains_name(&deps, b"AccountActions".to_string()));
+    assert!(contains_name(&deps, b"account_actions".to_string()));
 }
 
 #[test]

@@ -40,14 +40,14 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock) {
     let mut extensions = scenario.take_shared<Extensions>();
     let cap = scenario.take_from_sender<AdminCap>();
     // add core deps
-    extensions.add(&cap, b"AccountProtocol".to_string(), @account_protocol, 1);
+    extensions.add(&cap, b"account_protocol".to_string(), @account_protocol, 1);
     extensions.add(&cap, b"AccountConfig".to_string(), @0x1, 1);
     extensions.update(&cap, b"AccountConfig".to_string(), @0x11, 2);
-    extensions.add(&cap, b"AccountActions".to_string(), @0x2, 1);
+    extensions.add(&cap, b"account_actions".to_string(), @0x2, 1);
     // add external dep
     extensions.add(&cap, b"External".to_string(), @0xABC, 1);
 
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountConfig".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"AccountConfig".to_string()]);
     let account = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create world
@@ -84,8 +84,8 @@ fun test_edit_config_metadata() {
 #[test]
 fun test_update_extensions_to_latest() {
     let (scenario, mut extensions, mut account, clock) = start();
-    assert!(account.deps().get_by_name(b"AccountProtocol".to_string()).version() == 1);
-    extensions.update_for_testing(b"AccountProtocol".to_string(), @0x3, 2);
+    assert!(account.deps().get_by_name(b"account_protocol".to_string()).version() == 1);
+    extensions.update_for_testing(b"account_protocol".to_string(), @0x3, 2);
 
     let auth = account.new_auth(version::current(), Witness());
     config::update_extensions_to_latest(
@@ -93,7 +93,7 @@ fun test_update_extensions_to_latest() {
         &mut account,
         &extensions,
     );
-    assert!(account.deps().get_by_name(b"AccountProtocol".to_string()).version() == 2);
+    assert!(account.deps().get_by_name(b"account_protocol".to_string()).version() == 2);
 
     end(scenario, extensions, account, clock);
 }
@@ -101,11 +101,11 @@ fun test_update_extensions_to_latest() {
 #[test]
 fun test_update_extensions_to_latest_with_unverified() {
     let (scenario, mut extensions, mut account, clock) = start();
-    assert!(account.deps().get_by_name(b"AccountProtocol".to_string()).version() == 1);
-    extensions.update_for_testing(b"AccountProtocol".to_string(), @0x3, 2);
+    assert!(account.deps().get_by_name(b"account_protocol".to_string()).version() == 1);
+    extensions.update_for_testing(b"account_protocol".to_string(), @0x3, 2);
     
     account.deps_mut(version::current()).toggle_unverified_allowed_for_testing();
-    let deps_inner = deps::new_inner(&extensions, account.deps(), vector[b"AccountProtocol".to_string(), b"AccountConfig".to_string(), b"Other".to_string()], vector[@account_protocol, @0x1, @0x2], vector[1, 2, 1]);
+    let deps_inner = deps::new_inner(&extensions, account.deps(), vector[b"account_protocol".to_string(), b"AccountConfig".to_string(), b"Other".to_string()], vector[@account_protocol, @0x1, @0x2], vector[1, 2, 1]);
     *account.deps_mut(version::current()).inner_mut() = deps_inner;
 
     let auth = account.new_auth(version::current(), Witness());
@@ -116,7 +116,7 @@ fun test_update_extensions_to_latest_with_unverified() {
     );
 
     assert!(account.deps().get_by_name(b"AccountConfig".to_string()).version() == 2);
-    assert!(account.deps().get_by_name(b"AccountProtocol".to_string()).version() == 2);
+    assert!(account.deps().get_by_name(b"account_protocol".to_string()).version() == 2);
     assert!(account.deps().get_by_name(b"Other".to_string()).version() == 1);
 
     end(scenario, extensions, account, clock);
@@ -142,7 +142,7 @@ fun test_request_execute_config_deps() {
         params,
         Outcome {}, 
         &extensions,
-        vector[b"AccountProtocol".to_string(), b"AccountConfig".to_string(), b"External".to_string()], 
+        vector[b"account_protocol".to_string(), b"AccountConfig".to_string(), b"External".to_string()], 
         vector[@account_protocol, @0x11, @0xABC], 
         vector[1, 2, 1], 
         scenario.ctx()
@@ -185,7 +185,7 @@ fun test_config_deps_expired() {
         params,
         Outcome {}, 
         &extensions,
-        vector[b"AccountProtocol".to_string(), b"AccountConfig".to_string()], 
+        vector[b"account_protocol".to_string(), b"AccountConfig".to_string()], 
         vector[@account_protocol, @0x11], 
         vector[1, 2], 
         scenario.ctx()

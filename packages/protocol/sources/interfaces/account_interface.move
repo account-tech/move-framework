@@ -41,7 +41,7 @@ use account_protocol::{
 ///        version::current(), 
 ///        Witness(), 
 ///        ctx, 
-///        || deps::new_latest_extensions(extensions, vector[b"AccountProtocol".to_string(), b"MyConfig".to_string()])
+///        || deps::new_latest_extensions(extensions, vector[b"account_protocol".to_string(), b"MyConfig".to_string()])
 ///     )
 /// }
 /// 

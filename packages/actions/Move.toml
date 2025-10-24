@@ -16,7 +16,7 @@ local = "../protocol"
 local = "../extensions"
 
 [addresses]
-account_actions = "0x12203dcf67d17a6b2da606cfad116e5e44f4f7537b131b8d319e0e872cb4ca0e"
-account_protocol = "0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145"
-account_extensions = "0x1d30bc47bb24a3d2171ac3049088ad1f7d29c0d6ff8bb899b64206c5ee543242"
+account_actions = "0x01d0e3b70e355308aac796b7893d206ec97b518898ae0ec5fb047e3ea7e4bd2c"
+account_protocol = "0xcababb3174ca41c616a691024e98e37379e15af969e56b5992fa8139c354c6f5"
+account_extensions = "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347"
 kiosk = "0xbd8fc1947cf119350184107a3087e2dc27efefa0dd82e25a1f699069fe81a585"

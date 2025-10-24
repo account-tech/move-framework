@@ -47,10 +47,10 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, TreasuryCap<CURRENCY
     let mut extensions = scenario.take_shared<Extensions>();
     let cap = scenario.take_from_sender<AdminCap>();
     // add core deps
-    extensions.add(&cap, b"AccountProtocol".to_string(), @account_protocol, 1);
-    extensions.add(&cap, b"AccountActions".to_string(), @account_actions, 1);
+    extensions.add(&cap, b"account_protocol".to_string(), @account_protocol, 1);
+    extensions.add(&cap, b"account_actions".to_string(), @account_actions, 1);
 
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let account = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create TreasuryCap and CoinMetadata
@@ -723,12 +723,12 @@ fun test_error_do_update_icon_disabled() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-// sanity checks as these are tested in AccountProtocol tests
+// sanity checks as these are tested in account_protocol tests
 
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_do_disable_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
@@ -799,7 +799,7 @@ fun test_error_do_disable_from_wrong_constructor_witness() {
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_do_mint_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
@@ -865,7 +865,7 @@ fun test_error_do_mint_from_wrong_constructor_witness() {
 fun test_error_do_burn_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, mut cap, metadata) = start();
     let coin = cap.mint(5, scenario.ctx());
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
@@ -929,7 +929,7 @@ fun test_error_do_burn_from_wrong_constructor_witness() {
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_do_update_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, cap, mut metadata) = start();
-    let deps = deps::new_latest_extensions(&extensions, vector[b"AccountProtocol".to_string(), b"AccountActions".to_string()]);
+    let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
     let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 

@@ -1,5 +1,5 @@
 /// This module shows how to create a custom intent from pre-existing actions.
-/// Upgrade and Restrict are part of the AccountActions package.
+/// Upgrade and Restrict are part of the account_actions package.
 /// Here we use them to compose a new intent.
 /// 
 /// This intent represents a "one last upgrade".
