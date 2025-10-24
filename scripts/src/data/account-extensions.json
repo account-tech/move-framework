@@ -5,18 +5,18 @@
   },
   {
     "type": "account_extensions",
-    "id": "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347"
+    "id": "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f"
   },
   {
-    "type": "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347::extensions::Extensions",
-    "id": "0x646f394f2894ec3c5b1fb2175c64a027d19811ec61491f933a67afb9a8b5765a"
+    "type": "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f::extensions::AdminCap",
+    "id": "0xcf9df70744907e084097b42b0c93868815f62e103d940c29144e2598efd4e065"
+  },
+  {
+    "type": "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f::extensions::Extensions",
+    "id": "0xdcc888175b5ce6a26d05c3da7a22789991d52a633424c0e3816062be534cb0c7"
   },
   {
     "type": "0x2::package::UpgradeCap",
-    "id": "0x810f96250da517eac176c7e5f08899261b4d134f338c192dd0c2d6d30025f403"
-  },
-  {
-    "type": "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347::extensions::AdminCap",
-    "id": "0xafbb8c3dd47466c6ff6850e2e518d7478b75c7f3906867b27c00ee5fde81ae96"
+    "id": "0xdf2ea2a2cb1e508111c965ee6cc2d3842ad7cd94ebc295b034b1ffecc2b32fe8"
   }
 ]

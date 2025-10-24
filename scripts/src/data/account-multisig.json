@@ -5,18 +5,18 @@
   },
   {
     "type": "0x2::package::UpgradeCap",
-    "id": "0x229248ca9b61ef353218482af0912ff45c925e1fd3559b7e9fc36ad78da02f47"
+    "id": "0x091dcb18119d8911c548e16330e81709b4079bc211a54fcbeae8e1203f0d469c"
+  },
+  {
+    "type": "0xae205528b66901ceee822d9a932f0c14d2e0999eb13fbfa3403efff1afc5ea5e::fees::AdminCap",
+    "id": "0x21c1b08b4676ad7f685d77d5048d252f56ece3f65cc4376029518854129fab8b"
+  },
+  {
+    "type": "0xae205528b66901ceee822d9a932f0c14d2e0999eb13fbfa3403efff1afc5ea5e::fees::Fees",
+    "id": "0x82b6494d6b1b30bd9e039a8af4edff1498fa7dc01ab0dd59cfeed6ffb932281b"
   },
   {
     "type": "account_multisig",
-    "id": "0x2a2fad949635bf1451654174f0666a2e990f2172857ab70fa13cb5f606ce2088"
-  },
-  {
-    "type": "0x2a2fad949635bf1451654174f0666a2e990f2172857ab70fa13cb5f606ce2088::fees::AdminCap",
-    "id": "0x2d7e237efd8c18fa97b6669b74157631e47904eddabf9daa4c98ef0cf1c0d580"
-  },
-  {
-    "type": "0x2a2fad949635bf1451654174f0666a2e990f2172857ab70fa13cb5f606ce2088::fees::Fees",
-    "id": "0x62abeb9fe99ecf0434e35d21e6bb70ee346c1af7ecad0d905be7078c12cd10ec"
+    "id": "0xae205528b66901ceee822d9a932f0c14d2e0999eb13fbfa3403efff1afc5ea5e"
   }
 ]

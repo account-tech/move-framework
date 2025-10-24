@@ -46,6 +46,6 @@ dependencies = [
 
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347"
-latest-published-id = "0x162a649c6b0edc3bd1385124afdeffd6f85ab578484dad15c82326438219a347"
+original-published-id = "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f"
+latest-published-id = "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f"
 published-version = "1"
