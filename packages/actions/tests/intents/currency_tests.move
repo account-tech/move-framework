@@ -236,7 +236,7 @@ fun test_request_execute_withdraw_and_burn() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
-    currency_intents::execute_withdraw_and_burn<_, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, receiving);
+    currency_intents::execute_withdraw_and_burn<_, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, vector[receiving], scenario.ctx());
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);

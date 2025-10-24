@@ -77,15 +77,16 @@ public fun request_withdraw_and_transfer_to_vault<Config, Outcome: store, CoinTy
 public fun execute_withdraw_and_transfer_to_vault<Config, Outcome: store, CoinType: drop>(
     executable: &mut Executable<Outcome>, 
     account: &mut Account<Config>, 
-    receiving: Receiving<Coin<CoinType>>,
+    coins: vector<Receiving<Coin<CoinType>>>,
+    ctx: &mut TxContext
 ) {
     account.process_intent!(
         executable,
         version::current(),
         WithdrawAndTransferToVaultIntent(),
         |executable, iw| {
-            let object = owned::do_withdraw_coin(executable, account, receiving, iw);
-            vault::do_deposit(executable, account, object, version::current(), iw);
+            let coin = owned::do_withdraw_coin(executable, account, coins, iw, ctx);
+            vault::do_deposit(executable, account, coin, version::current(), iw);
         }
     );
 }
@@ -169,15 +170,16 @@ public fun request_withdraw_coin_and_transfer<Config, Outcome: store, CoinType>(
 public fun execute_withdraw_coin_and_transfer<Config, Outcome: store, CoinType>(
     executable: &mut Executable<Outcome>, 
     account: &mut Account<Config>, 
-    receiving: Receiving<Coin<CoinType>>,
+    coins: vector<Receiving<Coin<CoinType>>>,
+    ctx: &mut TxContext
 ) {
     account.process_intent!(
         executable,
         version::current(),
         WithdrawCoinsAndTransferIntent(),
         |executable, iw| {
-            let object = owned::do_withdraw_coin(executable, account, receiving, iw);
-            acc_transfer::do_transfer(executable, object, iw);
+            let coin = owned::do_withdraw_coin(executable, account, coins, iw, ctx);
+            acc_transfer::do_transfer(executable, coin, iw);
         }
     );
 }
@@ -216,7 +218,7 @@ public fun request_withdraw_and_vest<Config, Outcome: store, CoinType>(
 public fun execute_withdraw_and_vest<Config, Outcome: store, CoinType>(
     executable: &mut Executable<Outcome>, 
     account: &mut Account<Config>, 
-    receiving: Receiving<Coin<CoinType>>,
+    coins: vector<Receiving<Coin<CoinType>>>,
     ctx: &mut TxContext
 ) {
     account.process_intent!(
@@ -224,7 +226,7 @@ public fun execute_withdraw_and_vest<Config, Outcome: store, CoinType>(
         version::current(),
         WithdrawAndVestIntent(),
         |executable, iw| {
-            let coin = owned::do_withdraw_coin(executable, account, receiving, iw);
+            let coin = owned::do_withdraw_coin(executable, account, coins, iw, ctx);
             vesting::do_vest(executable, coin, iw, ctx);
         }
     );

@@ -110,15 +110,6 @@ fun create_dummy_intent(
     )
 }
 
-fun keep_coin(addr: address, amount: u64, scenario: &mut Scenario): ID {
-    let coin = coin::mint_for_testing<SUI>(amount, scenario.ctx());
-    let id = object::id(&coin);
-    transfer::public_transfer(coin, addr);
-    
-    scenario.next_tx(OWNER);
-    id
-}
-
 // === Tests === 
 
 #[test]
@@ -180,8 +171,9 @@ fun test_withdraw_coin_flow() {
     let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
         &mut executable,
         &mut account, 
-        ts::receiving_ticket_by_id<Coin<SUI>>(id),
+        vector[ts::receiving_ticket_by_id<Coin<SUI>>(id)],
         DummyIntent(),
+        scenario.ctx()
     );
     account.confirm_execution(executable);
 
@@ -208,69 +200,6 @@ fun test_withdraw_expired() {
 
     end(scenario, extensions, account, clock);
 }
-
-#[test]
-fun test_merge_and_split_2_coins() {
-    let (mut scenario, extensions, mut account, clock) = start();
-
-    let coin_to_split = coin::mint_for_testing<SUI>(100, scenario.ctx());
-    transfer::public_transfer(coin_to_split, account.addr());
-    
-    scenario.next_tx(OWNER);
-    let receiving_to_split = ts::most_recent_receiving_ticket<Coin<SUI>>(&object::id(&account));
-    let auth = account.new_auth(version::current(), Witness());
-    let split_coin_ids = owned::merge_and_split<Config, SUI>(
-        auth,
-        &mut account,
-        vector[receiving_to_split],
-        vector[40, 30],
-        scenario.ctx()
-    );
-
-    scenario.next_tx(OWNER);
-    let split_coin0 = scenario.take_from_address_by_id<Coin<SUI>>(
-        account.addr(), 
-        split_coin_ids[0]
-    );
-    let split_coin1 = scenario.take_from_address_by_id<Coin<SUI>>(
-        account.addr(), 
-        split_coin_ids[1]
-    );
-    assert!(split_coin0.value() == 40);
-    assert!(split_coin1.value() == 30);
-
-    destroy(split_coin0);
-    destroy(split_coin1);
-    end(scenario, extensions, account, clock);          
-}  
-
-#[test]
-fun test_merge_2_coins_and_split() {
-    let (mut scenario, extensions, mut account, clock) = start();
-    let account_address = account.addr();
-
-    let id1 = keep_coin(account_address, 60, &mut scenario);
-    let id2 = keep_coin(account_address, 40, &mut scenario);
-
-    let auth = account.new_auth(version::current(), Witness());
-    let merge_coin_id = owned::merge_and_split<Config, SUI>(
-        auth,
-        &mut account,
-        vector[ts::receiving_ticket_by_id(id1), ts::receiving_ticket_by_id(id2)],
-        vector[100],
-        scenario.ctx()
-    );
-
-    scenario.next_tx(OWNER);
-    let merge_coin = scenario.take_from_address_by_id<Coin<SUI>>(
-        account_address, 
-        merge_coin_id[0]
-    );
-    assert!(merge_coin.value() == 100);
-
-    destroy(merge_coin);
-    end(scenario, extensions, account, clock);          
-}  
 
 #[test, expected_failure(abort_code = owned::EWrongObject)]
 fun test_error_do_withdraw_wrong_object() {
@@ -317,8 +246,9 @@ fun test_error_do_withdraw_wrong_coin_type() {
     let coin = owned::do_withdraw_coin<_, Outcome, Witness, _>(
         &mut executable,
         &mut account, 
-        ts::receiving_ticket_by_id<Coin<Witness>>(id),
+        vector[ts::receiving_ticket_by_id<Coin<Witness>>(id)],
         DummyIntent(),
+        scenario.ctx()
     );
     account.confirm_execution(executable);
 
@@ -342,8 +272,9 @@ fun test_error_do_withdraw_wrong_coin_amount() {
     let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
         &mut executable,
         &mut account, 
-        ts::receiving_ticket_by_id<Coin<SUI>>(id),
+        vector[ts::receiving_ticket_by_id<Coin<SUI>>(id)],
         DummyIntent(),
+        scenario.ctx()
     );
     account.confirm_execution(executable);
 
@@ -374,8 +305,9 @@ fun test_error_do_withdraw_from_wrong_account() {
     let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
         &mut executable, 
         &mut account, 
-        ts::receiving_ticket_by_id<Coin<SUI>>(id),
+        vector[ts::receiving_ticket_by_id<Coin<SUI>>(id)],
         DummyIntent(),
+        scenario.ctx()
     );
 
     destroy(coin);
@@ -400,8 +332,9 @@ fun test_error_do_withdraw_from_wrong_constructor_witness() {
     let coin = owned::do_withdraw_coin<_, Outcome, SUI, _>(
         &mut executable, 
         &mut account, 
-        ts::receiving_ticket_by_id<Coin<SUI>>(id),
+        vector[ts::receiving_ticket_by_id<Coin<SUI>>(id)],
         WrongWitness(),
+        scenario.ctx()
     );
 
     destroy(coin);

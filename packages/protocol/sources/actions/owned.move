@@ -11,7 +11,7 @@ use sui::{
     transfer::Receiving
 };
 use account_protocol::{
-    account::{Account, Auth},
+    account::Account,
     intents::{Expired, Intent},
     executable::Executable,
 };
@@ -19,7 +19,6 @@ use account_protocol::{
 // === Errors ===
 
 const EWrongObject: u64 = 0;
-const EWrongAmount: u64 = 1;
 
 // === Structs ===
 
@@ -83,17 +82,14 @@ public fun new_withdraw_coin<Config, Outcome, CoinType, IW: drop>(
 public fun do_withdraw_coin<Config, Outcome: store, CoinType, IW: drop>(
     executable: &mut Executable<Outcome>,
     account: &mut Account<Config>,  
-    receiving: Receiving<Coin<CoinType>>,
+    coins: vector<Receiving<Coin<CoinType>>>,
     intent_witness: IW,
+    ctx: &mut TxContext
 ): Coin<CoinType> {    
     executable.intent().assert_is_account(account.addr());
 
     let action: &WithdrawCoinAction<CoinType> = executable.next_action(intent_witness);
-    let coin = account.receive(receiving);
-
-    assert!(coin.value() == action.coin_amount, EWrongAmount);
-
-    coin
+    merge_and_split(account, coins, action.coin_amount, ctx)
 }
 
 /// Deletes a WithdrawObjectAction from an expired intent
@@ -104,54 +100,22 @@ public fun delete_withdraw_coin<Config, CoinType>(expired: &mut Expired, account
 
 // Coin operations
 
-/// Authorized addresses can merge and split coins.
-/// Returns the IDs to use in a following intent, conserves the order.
-public fun merge_and_split<Config, CoinType>(
-    auth: Auth, 
+/// Create a new coin with the given amount from multiple coins.
+fun merge_and_split<Config, CoinType>(
     account: &mut Account<Config>, 
-    to_merge: vector<Receiving<Coin<CoinType>>>, // there can be only one coin if we just want to split
-    to_split: vector<u64>, // there can be no amount if we just want to merge
+    coins: vector<Receiving<Coin<CoinType>>>, // there can be only one coin if we just want to split
+    amount: u64, // there can be no amount if we just want to merge
     ctx: &mut TxContext
-): vector<ID> { 
-    account.verify(auth);
+): Coin<CoinType> { 
     // receive all coins
-    let mut coins = vector::empty();
-    to_merge.do!(|item| {
-        let coin = account.receive(item);
-        coins.push_back(coin);
+    let mut coin = coin::zero<CoinType>(ctx);
+    coins.do!(|item| {
+        let received = account.receive(item);
+        coin.join(received);
     });
 
-    let coin = merge(coins, ctx);
-    let ids = split(account, coin, to_split, ctx);
-
-    ids
-}
-
-fun merge<CoinType>(
-    coins: vector<Coin<CoinType>>, 
-    ctx: &mut TxContext
-): Coin<CoinType> {
-    let mut merged = coin::zero<CoinType>(ctx);
-    coins.do!(|coin| {
-        merged.join(coin);
-    });
-
-    merged
-}
-
-fun split<Config, CoinType>(
-    account: &Account<Config>, 
-    mut coin: Coin<CoinType>,
-    amounts: vector<u64>, 
-    ctx: &mut TxContext
-): vector<ID> {
-    let ids = amounts.map!(|amount| {
-        let split = coin.split(amount, ctx);
-        let id = object::id(&split);
-        account.keep(split);
-        id
-    });
+    let split = coin.split(amount, ctx);
     account.keep(coin);
 
-    ids
+    split
 }

@@ -283,14 +283,15 @@ public fun request_withdraw_and_burn<Config, Outcome: store, CoinType>(
 public fun execute_withdraw_and_burn<Config, Outcome: store, CoinType>(
     executable: &mut Executable<Outcome>,
     account: &mut Account<Config>,
-    receiving: Receiving<Coin<CoinType>>,
+    coins: vector<Receiving<Coin<CoinType>>>,
+    ctx: &mut TxContext
 ) {
     account.process_intent!(
         executable,
         version::current(),
         WithdrawAndBurnIntent(),
         |executable, iw| {
-            let coin = owned::do_withdraw_coin(executable, account, receiving, iw);
+            let coin = owned::do_withdraw_coin(executable, account, coins, iw, ctx);
             currency::do_burn(executable, account, coin, version::current(), iw);
         }
     );

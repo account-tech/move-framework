@@ -101,7 +101,7 @@ fun test_request_execute_transfer_to_vault() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
-    owned_intents::execute_withdraw_and_transfer_to_vault<Config, Outcome, SUI>(&mut executable, &mut account, ts::receiving_ticket_by_id<Coin<SUI>>(id));
+    owned_intents::execute_withdraw_and_transfer_to_vault<Config, Outcome, SUI>(&mut executable, &mut account, vector[ts::receiving_ticket_by_id<Coin<SUI>>(id)], scenario.ctx());
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
@@ -188,8 +188,8 @@ fun test_request_execute_transfer_coins() {
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
     // loop over execute_transfer to execute each action
-    owned_intents::execute_withdraw_coin_and_transfer<_, Outcome, SUI>(&mut executable, &mut account, ts::receiving_ticket_by_id<Coin<SUI>>(id1));
-    owned_intents::execute_withdraw_coin_and_transfer<_, Outcome, SUI>(&mut executable, &mut account, ts::receiving_ticket_by_id<Coin<SUI>>(id2));
+    owned_intents::execute_withdraw_coin_and_transfer<_, Outcome, SUI>(&mut executable, &mut account, vector[ts::receiving_ticket_by_id<Coin<SUI>>(id1)], scenario.ctx());
+    owned_intents::execute_withdraw_coin_and_transfer<_, Outcome, SUI>(&mut executable, &mut account, vector[ts::receiving_ticket_by_id<Coin<SUI>>(id2)], scenario.ctx());
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
@@ -235,7 +235,7 @@ fun test_request_execute_vesting() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), Witness());
-    owned_intents::execute_withdraw_and_vest<Config, Outcome, SUI>(&mut executable, &mut account, ts::receiving_ticket_by_id<Coin<SUI>>(id), scenario.ctx());
+    owned_intents::execute_withdraw_and_vest<Config, Outcome, SUI>(&mut executable, &mut account, vector[ts::receiving_ticket_by_id<Coin<SUI>>(id)], scenario.ctx());
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
@@ -292,7 +292,7 @@ fun test_error_request_transfer_coins_not_same_length() {
         params,
         outcome, 
         vector[1, 2],
-        vector[@0x1, @0x2],
+        vector[@0x1],
         scenario.ctx()
     );
 
