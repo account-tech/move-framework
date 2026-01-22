@@ -1,12 +1,8 @@
 [package]
 name = "account_protocol"
-edition = "2024.beta"
+edition = "2024"
 license = "Apache-2.0"
 authors = [ "Thouny (thouny@tuta.io)" ]
 
 [dependencies.account_extensions]
 local = "../extensions"
-
-[addresses]
-account_protocol = "0xb4cb9bfc37d340519e834165d6fc791ec279f756c2d3a3e2086ec22e09c04d3b"
-account_extensions = "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f"

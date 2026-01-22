@@ -1,8 +1,5 @@
 [package]
 name = "account_extensions"
-edition = "2024.beta"
+edition = "2024"
 license = "Apache-2.0"
 authors = [ "Thouny (thouny@tuta.io)" ]
-
-[addresses]
-account_extensions = "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f"

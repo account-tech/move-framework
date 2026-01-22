@@ -1,10 +1,10 @@
 [package]
 name = "account_actions"
-edition = "2024.beta"
+edition = "2024"
 license = "Apache-2.0"
 authors = [ "Thouny (thouny@tuta.io)" ]
 
-[dependencies.Kiosk]
+[dependencies.kiosk]
 git = "https://github.com/thounyy/apps.git"
 subdir = "kiosk"
 rev = "testnet"
@@ -14,9 +14,3 @@ local = "../protocol"
 
 [dependencies.account_extensions]
 local = "../extensions"
-
-[addresses]
-account_actions = "0xd7978ba8692e8c49a8a057387dd5bba5f8f9d67a486a42c089bfcecff58dc5f1"
-account_protocol = "0xb4cb9bfc37d340519e834165d6fc791ec279f756c2d3a3e2086ec22e09c04d3b"
-account_extensions = "0xce60a8a677814b1aae0aca19b49ccf35859dc5522aa407a74aaa55f28b0e641f"
-kiosk = "0xbd8fc1947cf119350184107a3087e2dc27efefa0dd82e25a1f699069fe81a585"

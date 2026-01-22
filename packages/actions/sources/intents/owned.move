@@ -138,7 +138,7 @@ public fun execute_withdraw_object_and_transfer<Config, Outcome: store, T: key +
 }
 
 /// Creates a WithdrawCoinsAndTransferIntent and adds it to an Account.
-public fun request_withdraw_coin_and_transfer<Config, Outcome: store, CoinType>(
+public fun request_withdraw_coins_and_transfer<Config, Outcome: store, CoinType>(
     auth: Auth,
     account: &mut Account<Config>, 
     params: Params,
