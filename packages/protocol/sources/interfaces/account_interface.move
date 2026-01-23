@@ -13,51 +13,11 @@ use std::string::String;
 use sui::clock::Clock;
 use account_protocol::{
     account::{Self, Account, Auth},
-    deps::Deps,
     version_witness::VersionWitness,
     executable::Executable,
 };
 
 // === Public functions ===
-
-/// Example implementation:
-/// 
-/// ```move
-/// 
-/// public struct Witness() has drop;
-///
-/// public fun new_account(
-///     extensions: &Extensions,
-///     ctx: &mut TxContext,
-/// ): Account<Config> {
-///     fees.process(coin);
-/// 
-///     let config = Config {
-///        .. <FIELDS>
-///     };
-/// 
-///     create_account!(
-///        config, 
-///        version::current(), 
-///        Witness(), 
-///        ctx, 
-///        || deps::new_latest_extensions(extensions, vector[b"account_protocol".to_string(), b"MyConfig".to_string()])
-///     )
-/// }
-/// 
-/// ```
-
-/// Returns a new Account object with a specific config and initialize dependencies.
-public macro fun create_account<$Config, $CW: drop>(
-    $config: $Config,
-    $version_witness: VersionWitness,
-    $config_witness: $CW,
-    $ctx: &mut TxContext,
-    $init_deps: || -> Deps,
-): Account<$Config> {
-    let deps = $init_deps();
-    account::new<$Config, $CW>($config, deps, $version_witness, $config_witness, $ctx)
-}
 
 /// Example implementation:
 /// 

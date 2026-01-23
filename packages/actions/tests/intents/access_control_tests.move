@@ -3,8 +3,8 @@ module account_actions::access_control_intents_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario::{Self as ts, Scenario},
     clock::{Self, Clock},
 };
@@ -13,6 +13,7 @@ use account_protocol::{
     account::{Self, Account},
     deps,
     intents,
+    metadata,
 };
 use account_actions::{
     access_control_intents,
@@ -51,7 +52,8 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock) {
 
     // Create account using account_protocol
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let account = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
+    let metadata = metadata::empty();
+    let account = account::new(Config {}, metadata, deps, version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create world
     destroy(cap);

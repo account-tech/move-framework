@@ -3,15 +3,14 @@ module account_protocol::user_tests;
 
 // === Imports ===
 
-use sui::{
-    test_utils::destroy,
-    test_scenario as ts,
-};
+use std::unit_test::destroy;
+use sui::test_scenario as ts;
 use account_protocol::{
     account::{Self, Account},
     user::{Self, User, Invite},
     deps,
     version,
+    metadata,
 };
 
 // === Constants ===
@@ -32,12 +31,12 @@ public struct AccountConfig2 has copy, drop, store {}
 
 fun create_account(ctx: &mut TxContext): Account<DummyConfig> {
     let deps = deps::new_for_testing();
-    account::new(DummyConfig {}, deps, version::current(), Witness(), ctx)
+    account::new(DummyConfig {}, metadata::empty(), deps, version::current(), Witness(), ctx)
 }
 
 fun create_account_with_config<T: drop>(config: T, ctx: &mut TxContext): Account<T> {
     let deps = deps::new_for_testing();
-    account::new(config, deps, version::current(), Witness(), ctx)
+    account::new(config, metadata::empty(), deps, version::current(), Witness(), ctx)
 }
 
 // === Tests ===

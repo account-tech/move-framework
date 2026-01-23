@@ -3,8 +3,8 @@ module account_protocol::executable_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario as ts,
     clock,
 };

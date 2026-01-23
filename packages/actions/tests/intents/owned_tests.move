@@ -3,8 +3,8 @@ module account_actions::owned_intents_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario::{Self as ts, Scenario},
     clock::{Self, Clock},
     coin::{Self, Coin},
@@ -16,6 +16,7 @@ use account_protocol::{
     owned,
     deps,
     intents,
+    metadata,
 };
 use account_actions::{
     owned_intents,
@@ -51,7 +52,8 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock) {
     extensions.add(&cap, b"account_actions".to_string(), @account_actions, 1);
 
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let account = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
+    let metadata = metadata::empty();
+    let account = account::new(Config {}, metadata, deps, version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create world
     destroy(cap);
@@ -176,7 +178,7 @@ fun test_request_execute_transfer_coins() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    owned_intents::request_withdraw_coin_and_transfer<Config, Outcome, SUI>(
+    owned_intents::request_withdraw_coins_and_transfer<Config, Outcome, SUI>(
         auth, 
         &mut account, 
         params,
@@ -286,7 +288,7 @@ fun test_error_request_transfer_coins_not_same_length() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    owned_intents::request_withdraw_coin_and_transfer<Config, Outcome, SUI>(
+    owned_intents::request_withdraw_coins_and_transfer<Config, Outcome, SUI>(
         auth, 
         &mut account, 
         params,

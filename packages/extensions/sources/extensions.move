@@ -216,7 +216,7 @@ public fun witness(): Witness {
 // === Unit Tests ===
 
 #[test_only]
-use sui::test_utils::destroy;
+use std::unit_test::destroy;
 #[test_only]
 use sui::test_scenario as ts;
 

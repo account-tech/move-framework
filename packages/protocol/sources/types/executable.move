@@ -71,9 +71,7 @@ public(package) fun destroy<Outcome: store>(executable: Executable<Outcome>): In
 //**************************************************************************************************//
 
 #[test_only]
-use std::unit_test::assert_eq;
-#[test_only]
-use sui::test_utils::destroy as test_destroy;
+use std::unit_test::{assert_eq, destroy as destroy_for_testing};
 #[test_only]
 use sui::clock;
 #[test_only]
@@ -114,8 +112,8 @@ fun test_new_executable() {
     assert_eq!(action_idx(&executable), 0);
     assert_eq!(intent(&executable).key(), b"test_key".to_string());
     
-    test_destroy(executable);
-    test_destroy(clock);
+    destroy_for_testing(executable);
+    destroy_for_testing(clock);
 }
 
 #[test]
@@ -154,8 +152,8 @@ fun test_next_action() {
     let _action2: &TestAction = next_action(&mut executable, TestIntentWitness());
     assert_eq!(action_idx(&executable), 2);
     
-    test_destroy(executable);
-    test_destroy(clock);
+    destroy_for_testing(executable);
+    destroy_for_testing(clock);
 }
 
 #[test]
@@ -187,8 +185,8 @@ fun test_contains_action() {
     
     assert!(contains_action<_, TestAction>(&mut executable));
     
-    test_destroy(executable);
-    test_destroy(clock);
+    destroy_for_testing(executable);
+    destroy_for_testing(clock);
 }
 
 #[test]
@@ -218,8 +216,8 @@ fun test_contains_action_empty() {
     
     assert!(!contains_action<_, TestAction>(&mut executable));
     
-    test_destroy(executable);
-    test_destroy(clock);
+    destroy_for_testing(executable);
+    destroy_for_testing(clock);
 }
 
 #[test]
@@ -251,8 +249,8 @@ fun test_destroy_executable() {
     assert_eq!(recovered_intent.key(), b"test_key".to_string());
     assert_eq!(recovered_intent.description(), b"test_description".to_string());
     
-    test_destroy(recovered_intent);
-    test_destroy(clock);
+    destroy_for_testing(recovered_intent);
+    destroy_for_testing(clock);
 }
 
 #[test]
@@ -295,8 +293,8 @@ fun test_executable_with_multiple_actions() {
     
     assert_eq!(action_idx(&executable), 3);
     
-    test_destroy(executable);
-    test_destroy(clock);
+    destroy_for_testing(executable);
+    destroy_for_testing(clock);
 }
 
 #[test]
@@ -333,7 +331,7 @@ fun test_intent_access() {
     role.append_utf8(b"::test_role");
     assert_eq!(intent_ref.role(), role);
     
-    test_destroy(executable);
-    test_destroy(clock);
+    destroy_for_testing(executable);
+    destroy_for_testing(clock);
 }
 

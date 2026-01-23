@@ -3,8 +3,8 @@ module account_protocol::account_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario as ts,
     clock,
 };
@@ -14,6 +14,7 @@ use account_protocol::{
     deps,
     version,
     version_witness,
+    metadata,
 };
 
 // === Constants ===
@@ -43,7 +44,7 @@ public struct Outcome has copy, drop, store {}
 #[test]
 fun test_create_and_share_account() {
     let mut scenario = ts::begin(OWNER);
-    let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     transfer::public_share_object(account);
 
@@ -53,7 +54,7 @@ fun test_create_and_share_account() {
 #[test]
 fun test_keep_object() {
     let mut scenario = ts::begin(OWNER);
-    let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.keep(Asset { id: object::new(scenario.ctx()) });
     scenario.next_tx(OWNER);
@@ -67,7 +68,7 @@ fun test_keep_object() {
 #[test]
 fun test_account_getters() {
     let mut scenario = ts::begin(OWNER);
-    let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     assert!(account.addr() == object::id(&account).to_address());
     assert!(account.metadata().length() == 0);
@@ -82,7 +83,7 @@ fun test_account_getters() {
 #[test]
 fun test_intent_create_execute_flow() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -120,7 +121,7 @@ fun test_intent_create_execute_flow() {
 #[test]
 fun test_anyone_can_execute_intent() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -154,7 +155,7 @@ fun test_anyone_can_execute_intent() {
 #[test]
 fun test_intent_delete_flow() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let mut clock = clock::create_for_testing(scenario.ctx());
     clock.increment_for_testing(1);
 
@@ -189,7 +190,7 @@ fun test_intent_delete_flow() {
 #[test]
 fun test_managed_data() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_data(Key {}, Data { inner: true }, version::current());
     account.has_managed_data(Key {});
@@ -206,7 +207,7 @@ fun test_managed_data() {
 #[test]
 fun test_managed_assets() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_asset(Key {}, Asset { id: object::new(scenario.ctx()) }, version::current());
     account.has_managed_asset(Key {});
@@ -222,7 +223,7 @@ fun test_managed_assets() {
 #[test]
 fun test_receive_object() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.keep(Asset { id: object::new(scenario.ctx()) });
     scenario.next_tx(OWNER);
@@ -238,7 +239,7 @@ fun test_receive_object() {
 #[allow(unused_mut_ref)]
 fun test_account_getters_mut() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     assert!(account.metadata_mut(version::current()).length() == 0);
     assert!(account.deps_mut(version::current()).contains_name(b"account_protocol".to_string()));
@@ -252,11 +253,11 @@ fun test_account_getters_mut() {
 #[test, expected_failure(abort_code = account::EWrongAccount)]
 fun test_error_cannot_verify_wrong_account() {
     let mut scenario = ts::begin(OWNER);
-    let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     
     let auth = account.new_auth(version::current(), Witness());
     let deps = deps::new_for_testing();
-    let account2 = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
+    let account2 = account::new(Config {}, metadata::empty(), deps, version::current(), Witness(), scenario.ctx());
     account2.verify(auth);
 
     destroy(account2);
@@ -267,7 +268,7 @@ fun test_error_cannot_verify_wrong_account() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_create_intent_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -296,7 +297,7 @@ fun test_error_cannot_create_intent_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_insert_intent_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -325,11 +326,11 @@ fun test_error_cannot_insert_intent_from_not_dependent_package() {
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_insert_intent_with_wrong_account() {
     let mut scenario = ts::begin(OWNER);
-    let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let deps = deps::new_for_testing();
-    let mut account2 = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
+    let mut account2 = account::new(Config {}, metadata::empty(), deps, version::current(), Witness(), scenario.ctx());
 
     let params = intents::new_params(
         b"one".to_string(), 
@@ -359,7 +360,7 @@ fun test_error_insert_intent_with_wrong_account() {
 #[test, expected_failure(abort_code = intents::EWrongWitness)]
 fun test_error_insert_intent_with_wrong_witness() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -388,11 +389,11 @@ fun test_error_insert_intent_with_wrong_witness() {
 #[test, expected_failure(abort_code = intents::EWrongAccount)]
 fun test_error_cannot_confirm_execution_with_wrong_account() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let deps = deps::new_for_testing();
-    let mut account2 = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
+    let mut account2 = account::new(Config {}, metadata::empty(), deps, version::current(), Witness(), scenario.ctx());
 
     let params = intents::new_params(
         b"one".to_string(), 
@@ -424,7 +425,7 @@ fun test_error_cannot_confirm_execution_with_wrong_account() {
 #[test, expected_failure(abort_code = account::EActionsRemaining)]
 fun test_error_cannot_confirm_execution_before_all_actions_executed() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -458,7 +459,7 @@ fun test_error_cannot_confirm_execution_before_all_actions_executed() {
 #[test, expected_failure(abort_code = account::ECantBeRemovedYet)]
 fun test_error_cannot_destroy_intent_without_executing() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -489,7 +490,7 @@ fun test_error_cannot_destroy_intent_without_executing() {
 #[test, expected_failure(abort_code = account::EHasntExpired)]
 fun test_error_cannot_delete_intent_not_expired() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -521,7 +522,7 @@ fun test_error_cannot_delete_intent_not_expired() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_add_managed_asset_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_data(Key {}, Data { inner: true }, version_witness::new_for_testing(@0xDE9));
 
@@ -532,7 +533,7 @@ fun test_error_cannot_add_managed_asset_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_borrow_managed_asset_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_data(Key {}, Data { inner: true }, version::current());
     let asset: &Data = account.borrow_managed_data(Key {}, version_witness::new_for_testing(@0xDE9));
@@ -545,7 +546,7 @@ fun test_error_cannot_borrow_managed_asset_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_borrow_mut_managed_asset_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_data(Key {}, Data { inner: true }, version::current());
     let asset: &mut Data = account.borrow_managed_data_mut(Key {}, version_witness::new_for_testing(@0xDE9));
@@ -558,7 +559,7 @@ fun test_error_cannot_borrow_mut_managed_asset_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_remove_managed_asset_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_data(Key {}, Data { inner: true }, version::current());
     let Data { .. } = account.remove_managed_data(Key {}, version_witness::new_for_testing(@0xDE9));
@@ -570,7 +571,7 @@ fun test_error_cannot_remove_managed_asset_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_add_managed_object_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_asset(Key {}, Asset { id: object::new(scenario.ctx()) }, version_witness::new_for_testing(@0xDE9));
 
@@ -581,7 +582,7 @@ fun test_error_cannot_add_managed_object_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_borrow_managed_object_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_asset(Key {}, Asset { id: object::new(scenario.ctx()) }, version::current());
     let asset: &Asset = account.borrow_managed_asset(Key {}, version_witness::new_for_testing(@0xDE9));
@@ -594,7 +595,7 @@ fun test_error_cannot_borrow_managed_object_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_borrow_mut_managed_object_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_asset(Key {}, Asset { id: object::new(scenario.ctx()) }, version::current());
     let asset: &mut Asset = account.borrow_managed_asset_mut(Key {}, version_witness::new_for_testing(@0xDE9));
@@ -607,7 +608,7 @@ fun test_error_cannot_borrow_mut_managed_object_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_remove_managed_object_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     account.add_managed_asset(Key {}, Asset { id: object::new(scenario.ctx()) }, version::current());
     let Asset { id } = account.remove_managed_asset(Key {}, version_witness::new_for_testing(@0xDE9));
@@ -620,7 +621,7 @@ fun test_error_cannot_remove_managed_object_from_not_dependent_package() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_new_auth_not_called_from_not_dep() {
     let mut scenario = ts::begin(OWNER);
-    let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     let auth = account.new_auth(version_witness::new_for_testing(@0xDE9), Witness());
     account.verify(auth);
@@ -632,7 +633,7 @@ fun test_error_new_auth_not_called_from_not_dep() {
 #[test, expected_failure(abort_code = account::ENotCalledFromConfigModule)]
 fun test_error_new_auth_not_called_from_config_module() {
     let mut scenario = ts::begin(OWNER);
-    let account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
 
     let auth = account.new_auth(version::current(), account::not_config_witness());
     account.verify(auth);
@@ -644,7 +645,7 @@ fun test_error_new_auth_not_called_from_config_module() {
 #[test, expected_failure(abort_code = deps::ENotDep)]
 fun test_error_cannot_execute_intent_from_not_dependent_package() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -675,7 +676,7 @@ fun test_error_cannot_execute_intent_from_not_dependent_package() {
 #[test, expected_failure(abort_code = account::ENotCalledFromConfigModule)]
 fun test_error_cannot_execute_intent_not_called_from_config_module() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(
@@ -706,7 +707,7 @@ fun test_error_cannot_execute_intent_not_called_from_config_module() {
 #[test, expected_failure(abort_code = account::ECantBeExecutedYet)]
 fun test_error_cannot_execute_intent_before_execution_time() {
     let mut scenario = ts::begin(OWNER);
-    let mut account = account::new(Config {}, deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
+    let mut account = account::new(Config {}, metadata::empty(), deps::new_for_testing(), version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
 
     let params = intents::new_params(

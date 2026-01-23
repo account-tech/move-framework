@@ -236,9 +236,9 @@ public fun add_account_for_testing<Config>(
 // === Unit Tests ===
 
 #[test_only]
-use sui::test_scenario as ts;
+use std::unit_test::{destroy as destroy_for_testing};
 #[test_only]
-use sui::test_utils as tu;
+use sui::test_scenario as ts;
 
 #[test_only]
 public struct DummyConfig has copy, drop, store {}
@@ -273,8 +273,8 @@ fun test_transfer_user_recipient() {
     assert!(registry.users.contains(@0xA11CE));
     assert!(registry.users.borrow(@0xA11CE) == user_id);
 
-    tu::destroy(user);
-    tu::destroy(registry);
+    destroy_for_testing(user);
+    destroy_for_testing(registry);
     scenario.end();
 }
 
@@ -291,7 +291,7 @@ fun test_destroy_user() {
     destroy(&mut registry, user, scenario.ctx());
 
     assert!(!registry.users.contains(@0xA11CE));
-    tu::destroy(registry);
+    destroy_for_testing(registry);
     scenario.end();
 }
 
@@ -310,7 +310,7 @@ fun test_accept_invite() {
     assert!(user.accounts.contains(&b"0x0::config::Config".to_string()));
     assert!(user.accounts[&b"0x0::config::Config".to_string()].contains(&@0xACC));
 
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }
 
@@ -331,7 +331,7 @@ fun test_accept_invite_already_registered() {
     
     accept_invite(&mut user, invite);
 
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }
 
@@ -349,7 +349,7 @@ fun test_refuse_invite() {
     refuse_invite(invite);
     assert!(!user.accounts.contains(&b"0x0::config::Config".to_string()));
 
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }
 
@@ -367,7 +367,7 @@ fun test_reorder_accounts() {
     user.reorder_accounts<DummyConfig>(vector[@0x2, @0x3, @0x1]);
     assert!(user.accounts.get(&key) == vector[@0x2, @0x3, @0x1]);
 
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }
 
@@ -379,7 +379,7 @@ fun test_error_transfer_to_existing_user() {
     registry.transfer(new(scenario.ctx()), @0xCAFE, scenario.ctx());
     registry.transfer(new(scenario.ctx()), @0xCAFE, scenario.ctx());
 
-    tu::destroy(registry);
+    destroy_for_testing(registry);
     scenario.end();
 }
 
@@ -392,7 +392,7 @@ fun test_error_transfer_wrong_user_object() {
     // OWNER transfers wrong user object to ALICE
     registry.transfer(new(scenario.ctx()), @0xA11CE, scenario.ctx());
 
-    tu::destroy(registry);
+    destroy_for_testing(registry);
     scenario.end();
 }
 
@@ -405,7 +405,7 @@ fun test_error_destroy_non_empty_user() {
     user.add_account_for_testing<DummyConfig>(@0xACC);
     destroy(&mut registry, user, scenario.ctx());
 
-    tu::destroy(registry);
+    destroy_for_testing(registry);
     scenario.end();
 }
 
@@ -417,7 +417,7 @@ fun test_error_add_already_existing_account() {
     user.add_account_for_testing<DummyConfig>(@0xACC);
     user.add_account_for_testing<DummyConfig>(@0xACC);
     
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }
 
@@ -428,7 +428,7 @@ fun test_reorder_accounts_empty() {
 
     user.reorder_accounts<DummyConfig>(vector[]);
 
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }
 
@@ -442,7 +442,7 @@ fun test_reorder_accounts_different_length() {
 
     user.reorder_accounts<DummyConfig>(vector[@0xACC]);
 
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }
 
@@ -456,6 +456,6 @@ fun test_reorder_accounts_wrong_account() {
 
     user.reorder_accounts<DummyConfig>(vector[@0x1, @0x3]);
 
-    tu::destroy(user);
+    destroy_for_testing(user);
     scenario.end();
 }

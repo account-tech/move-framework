@@ -4,11 +4,11 @@ module account_protocol::intents_tests;
 // === Imports ===
 
 use std::{
+    unit_test::destroy,
     string::String,
     type_name,
 };
 use sui::{
-    test_utils::destroy,
     test_scenario as ts,
     clock,
 };

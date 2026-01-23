@@ -3,8 +3,8 @@ module account_actions::kiosk_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario::{Self as ts, Scenario},
     kiosk::{Self, Kiosk, KioskOwnerCap},
     package,
@@ -19,6 +19,7 @@ use account_protocol::{
     account::{Self, Account},
     intents::{Self, Intent},
     deps,
+    metadata,
 };
 use account_actions::{
     version,
@@ -59,7 +60,8 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, TransferPolicy<Nft>)
     extensions.add(&cap, b"account_actions".to_string(), @account_actions, 1);
 
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let account = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let account = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // instantiate TransferPolicy 
     let publisher = package::test_claim(KIOSK_TESTS {}, scenario.ctx());
@@ -465,7 +467,8 @@ fun test_error_do_take_wrong_receiver() {
 fun test_error_do_take_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, mut policy) = start();
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let mut account2 = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     
     let (mut acc_kiosk, mut ids) = init_account_kiosk_with_nfts(&mut account, &mut policy, 1, &mut scenario);
     let (mut caller_kiosk, caller_cap, _) = init_caller_kiosk_with_nfts(&policy, 0, &mut scenario);
@@ -533,7 +536,8 @@ fun test_error_do_take_from_wrong_constructor_witness() {
 fun test_error_do_list_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, mut policy) = start();
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let mut account2 = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     
     let (mut acc_kiosk, mut ids) = init_account_kiosk_with_nfts(&mut account, &mut policy, 1, &mut scenario);
     let key = b"dummy".to_string();

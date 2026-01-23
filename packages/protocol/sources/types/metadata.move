@@ -57,9 +57,7 @@ public fun length(metadata: &Metadata): u64 {
 // === Test Helpers ===
 
 #[test_only]
-use std::unit_test::assert_eq;
-#[test_only]
-use sui::test_utils::destroy;
+use std::unit_test::{assert_eq, destroy};
 
 // === Unit Tests ===
 

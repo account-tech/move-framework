@@ -3,12 +3,8 @@ module account_protocol::metadata_tests;
 
 // === Imports ===
 
-use sui::{
-    test_scenario::Self as ts,
-};
-use account_protocol::{
-    metadata,
-};
+use sui::test_scenario as ts;
+use account_protocol::metadata;
 
 // === Constants ===
 

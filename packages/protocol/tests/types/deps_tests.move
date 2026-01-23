@@ -3,10 +3,8 @@ module account_protocol::deps_tests;
 
 // === Imports ===
 
-use sui::{
-    test_utils::destroy,
-    package,
-};
+use std::unit_test::destroy;
+use sui::package;
 use account_protocol::{
     deps,
     version,

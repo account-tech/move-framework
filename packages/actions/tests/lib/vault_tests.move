@@ -3,8 +3,8 @@ module account_actions::vault_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario::{Self as ts, Scenario},
     clock::{Self, Clock},
     coin,
@@ -15,6 +15,7 @@ use account_protocol::{
     account::{Self, Account},
     intents::{Self, Intent},
     deps,
+    metadata,
 };
 use account_actions::{
     version,
@@ -49,8 +50,9 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock) {
     extensions.add(&cap, b"account_protocol".to_string(), @account_protocol, 1);
     extensions.add(&cap, b"account_actions".to_string(), @account_actions, 1);
 
+    let metadata = metadata::empty();
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let account = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let account = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create world
     destroy(cap);
@@ -407,7 +409,8 @@ fun test_error_do_update_from_wrong_account() {
     let key = b"dummy".to_string();
 
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let mut account2 = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     // intent is submitted to other account
     let mut intent = create_dummy_intent(&mut scenario, &account2, &clock);
     vault::new_spend<_, SUI, _>(

@@ -398,9 +398,7 @@ fun new_role<IW: drop>(managed_name: String): String {
 //**************************************************************************************************//
 
 #[test_only]
-use std::unit_test::assert_eq;
-#[test_only]
-use sui::test_utils::destroy;
+use std::unit_test::{assert_eq, destroy};
 #[test_only]
 use sui::clock;
 

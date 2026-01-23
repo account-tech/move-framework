@@ -3,8 +3,8 @@ module account_actions::package_upgrade_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario::{Self as ts, Scenario},
     clock::{Self, Clock},
     package::{Self, UpgradeCap},
@@ -14,6 +14,7 @@ use account_protocol::{
     account::{Self, Account},
     intents::{Self, Intent},
     deps,
+    metadata,
 };
 use account_actions::{
     version,
@@ -47,7 +48,8 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, UpgradeCap) {
     extensions.add(&cap, b"account_actions".to_string(), @account_actions, 1);
 
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let account = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let account = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     let upgrade_cap = package::test_publish(@0x1.to_id(), scenario.ctx());
     // create world
@@ -261,7 +263,8 @@ fun test_restrict_expired() {
 fun test_error_do_upgrade_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, upgrade_cap) = start();
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let mut account2 = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());
@@ -318,7 +321,8 @@ fun test_error_do_upgrade_from_wrong_constructor_witness() {
 fun test_error_confirm_upgrade_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, upgrade_cap) = start();
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let mut account2 = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());
@@ -393,7 +397,8 @@ fun test_error_confirm_upgrade_from_wrong_constructor_witness() {
 fun test_error_do_restrict_from_wrong_account() {
     let (mut scenario, extensions, mut account, clock, upgrade_cap) = start();
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let mut account2 = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let mut account2 = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());

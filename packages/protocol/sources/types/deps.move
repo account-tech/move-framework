@@ -232,9 +232,7 @@ public fun toggle_unverified_allowed_for_testing(deps: &mut Deps) {
 // === Unit Tests ===
 
 #[test_only]
-use std::unit_test::assert_eq;
-#[test_only]
-use sui::test_utils::destroy;
+use std::unit_test::{assert_eq, destroy};
 #[test_only]
 use account_protocol::version_witness;
 

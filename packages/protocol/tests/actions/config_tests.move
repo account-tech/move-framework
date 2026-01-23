@@ -3,8 +3,8 @@ module account_protocol::config_intents_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario::{Self as ts, Scenario},
     clock::{Self, Clock},
 };
@@ -15,6 +15,7 @@ use account_protocol::{
     intents,
     config,
     version,
+    metadata,
 };
 
 // === Constants ===
@@ -48,7 +49,8 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock) {
     extensions.add(&cap, b"External".to_string(), @0xABC, 1);
 
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"AccountConfig".to_string()]);
-    let account = account::new(Config {}, deps, version::current(), Witness(), scenario.ctx());
+    let metadata = metadata::empty();
+    let account = account::new(Config {}, metadata, deps, version::current(), Witness(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create world
     destroy(cap);

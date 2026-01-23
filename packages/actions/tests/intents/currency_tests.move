@@ -3,8 +3,8 @@ module account_actions::currency_intents_tests;
 
 // === Imports ===
 
+use std::unit_test::destroy;
 use sui::{
-    test_utils::destroy,
     test_scenario::{Self as ts, Scenario},
     clock::{Self, Clock},
     coin::{Self, Coin, TreasuryCap, CoinMetadata},
@@ -16,6 +16,7 @@ use account_protocol::{
     owned,
     deps,
     intents,
+    metadata,
 };
 use account_actions::{
     currency,
@@ -44,7 +45,7 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, TreasuryCap<CURRENCY
     let mut scenario = ts::begin(OWNER);
     // publish package
     extensions::init_for_testing(scenario.ctx());
-    // retrieve objects
+    // retrieve objects 
     scenario.next_tx(OWNER);
     let mut extensions = scenario.take_shared<Extensions>();
     let cap = scenario.take_from_sender<AdminCap>();
@@ -54,7 +55,8 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, TreasuryCap<CURRENCY
 
     // Create account using account_protocol
     let deps = deps::new_latest_extensions(&extensions, vector[b"account_protocol".to_string(), b"account_actions".to_string()]);
-    let account = account::new(Config {}, deps, version::current(), DummyIntent(), scenario.ctx());
+    let metadata = metadata::empty();
+    let account = account::new(Config {}, metadata, deps, version::current(), DummyIntent(), scenario.ctx());
     let clock = clock::create_for_testing(scenario.ctx());
     // create TreasuryCap and CoinMetadata
     let (treasury_cap, metadata) = coin::create_currency(

@@ -31,12 +31,13 @@ use std::{
 use sui::{
     transfer::Receiving,
     clock::Clock,
+    derived_object,
     dynamic_field as df,
     dynamic_object_field as dof,
     package,
 };
 use account_protocol::{
-    metadata::{Self, Metadata},
+    metadata::Metadata,
     deps::Deps,
     version_witness::VersionWitness,
     intents::{Self, Intents, Intent, Expired, Params},
@@ -313,9 +314,10 @@ public fun remove_managed_asset<Config, Key: copy + drop + store, Asset: key + s
 /// They must be implemented in the module that defines the config of the account, which must be a dependency of the account.
 /// We provide higher level macros to facilitate the implementation of these functions.
 
-/// Creates a new account with default dependencies. Can only be called from the config module.
+/// Creates a new account with provided config and dependencies. Can only be called from the config module.
 public fun new<Config, CW: drop>(
     config: Config, 
+    metadata: Metadata,
     deps: Deps,
     version_witness: VersionWitness,
     config_witness: CW,
@@ -323,7 +325,32 @@ public fun new<Config, CW: drop>(
 ): Account<Config> {
     let account = Account<Config> { 
         id: object::new(ctx),
-        metadata: metadata::empty(),
+        metadata,
+        deps,
+        intents: intents::empty(ctx),
+        config,
+    };
+
+    account.deps().check(version_witness);
+    account.assert_is_config_module(config_witness);
+
+    account 
+}
+
+/// Creates a new account with default dependencies. Can only be called from the config module.
+public fun new_with_derived_id<Config, CW: drop>(
+    parent_uid: &mut UID,
+    key: String,
+    config: Config, 
+    metadata: Metadata,
+    deps: Deps,
+    version_witness: VersionWitness,
+    config_witness: CW,
+    ctx: &mut TxContext
+): Account<Config> {
+    let account = Account<Config> { 
+        id: derived_object::claim(parent_uid, key),
+        metadata,
         deps,
         intents: intents::empty(ctx),
         config,
@@ -489,13 +516,11 @@ public fun not_config_witness(): Witness {
 // === Unit Tests ===
 
 #[test_only]
-use std::unit_test::assert_eq;
-#[test_only]
-use sui::test_utils::destroy;
+use std::unit_test::{assert_eq, destroy};
 #[test_only]
 use account_extensions::extensions;
 #[test_only]
-use account_protocol::{version, deps};
+use account_protocol::{version, deps, metadata};
 
 #[test_only]
 public struct TestConfig has copy, drop, store {}
@@ -515,11 +540,25 @@ public struct TestAsset has key, store {
 }
 
 #[test]
+fun test_new_with_derived_id() {
+    let ctx = &mut tx_context::dummy();
+    let metadata = metadata::empty();
+    let deps = deps::new_for_testing();
+
+    let mut parent_object = TestAsset { id: object::new(ctx) };
+    let account = new_with_derived_id(&mut parent_object.id, "test", TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
+
+    destroy(account);
+    destroy(parent_object);
+}
+
+#[test]
 fun test_addr() {
     let ctx = &mut tx_context::dummy();
+    let metadata = metadata::empty();
     let deps = deps::new_for_testing();
     
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let account_addr = addr(&account);
     
     assert_eq!(account_addr, object::id(&account).to_address());
@@ -530,8 +569,9 @@ fun test_addr() {
 fun test_verify_auth() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let auth = Auth { account_addr: account.addr() };
     
     // Should not abort
@@ -543,8 +583,9 @@ fun test_verify_auth() {
 fun test_verify_auth_wrong_account() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let auth = Auth { account_addr: @0xBAD };
     
     verify(&account, auth);
@@ -555,8 +596,9 @@ fun test_verify_auth_wrong_account() {
 fun test_managed_data_flow() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     let data = TestData { value: 42 };
     
@@ -583,8 +625,9 @@ fun test_managed_data_flow() {
 fun test_add_managed_data_already_exists() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     let data1 = TestData { value: 42 };
     let data2 = TestData { value: 100 };
@@ -598,8 +641,9 @@ fun test_add_managed_data_already_exists() {
 fun test_borrow_managed_data_doesnt_exist() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     borrow_managed_data<_, TestKey, TestData>(&account, key, version::current());
@@ -610,8 +654,9 @@ fun test_borrow_managed_data_doesnt_exist() {
 fun test_borrow_managed_data_mut_doesnt_exist() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     borrow_managed_data_mut<_, TestKey, TestData>(&mut account, key, version::current());
@@ -622,8 +667,9 @@ fun test_borrow_managed_data_mut_doesnt_exist() {
 fun test_remove_managed_data_doesnt_exist() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     remove_managed_data<_, TestKey, TestData>(&mut account, key, version::current());
@@ -634,8 +680,9 @@ fun test_remove_managed_data_doesnt_exist() {
 fun test_managed_asset_flow() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     let asset = TestAsset { id: object::new(ctx) };
     let asset_id = object::id(&asset);
@@ -660,8 +707,9 @@ fun test_managed_asset_flow() {
 fun test_has_managed_data_false() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     assert!(!has_managed_data(&account, key));
@@ -672,8 +720,9 @@ fun test_has_managed_data_false() {
 fun test_has_managed_asset_false() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     assert!(!has_managed_asset(&account, key));
@@ -684,8 +733,9 @@ fun test_has_managed_asset_false() {
 fun test_add_managed_asset_already_exists() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     let asset1 = TestAsset { id: object::new(ctx) };
     let asset2 = TestAsset { id: object::new(ctx) };
@@ -699,8 +749,9 @@ fun test_add_managed_asset_already_exists() {
 fun test_borrow_managed_asset_doesnt_exist() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     borrow_managed_asset<_, TestKey, TestAsset>(&account, key, version::current());
@@ -711,8 +762,9 @@ fun test_borrow_managed_asset_doesnt_exist() {
 fun test_borrow_managed_asset_mut_doesnt_exist() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     borrow_managed_asset_mut<_, TestKey, TestAsset>(&mut account, key, version::current());
@@ -723,8 +775,9 @@ fun test_borrow_managed_asset_mut_doesnt_exist() {
 fun test_remove_managed_asset_doesnt_exist() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let mut account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let mut account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let key = TestKey {};
     
     let removed_asset = remove_managed_asset<_, TestKey, TestAsset>(&mut account, key, version::current());
@@ -736,8 +789,9 @@ fun test_remove_managed_asset_doesnt_exist() {
 fun test_new_auth() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     let auth = new_auth(&account, version::current(), TestWitness());
     
     assert_eq!(auth.account_addr, account.addr());
@@ -749,8 +803,9 @@ fun test_new_auth() {
 fun test_metadata_access() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     
     // Should not abort - just testing access
     assert_eq!(metadata(&account).length(), 0);
@@ -761,8 +816,9 @@ fun test_metadata_access() {
 fun test_config_access() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     
     // Should not abort - just testing access
     config(&account);
@@ -773,8 +829,9 @@ fun test_config_access() {
 fun test_assert_is_config_module_correct_witness() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     
     // Should not abort
     assert_is_config_module(&account, TestWitness());
@@ -785,8 +842,9 @@ fun test_assert_is_config_module_correct_witness() {
 fun test_assert_config_module_wrong_witness_package_address() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     assert_is_config_module(&account, extensions::witness());
     destroy(account);
 }
@@ -795,8 +853,9 @@ fun test_assert_config_module_wrong_witness_package_address() {
 fun test_assert_config_module_wrong_witness_module() {
     let ctx = &mut tx_context::dummy();
     let deps = deps::new_for_testing();
-    
-    let account = new(TestConfig {}, deps, version::current(), TestWitness(), ctx);
+    let metadata = metadata::empty();
+
+    let account = new(TestConfig {}, metadata, deps, version::current(), TestWitness(), ctx);
     assert_is_config_module(&account, version::witness());
     destroy(account);
 }
