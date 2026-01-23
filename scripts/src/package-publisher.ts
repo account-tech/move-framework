@@ -1,13 +1,9 @@
-import { Transaction } from "@mysten/sui/transactions";
 import { SuiObjectChange } from "@mysten/sui/client";
 import * as fs from "fs";
 import * as TOML from "@iarna/toml";
 import * as path from "path";
-import { client, keypair, IObjectInfo, getId } from "./utils.js";
-import { execSync } from "child_process";
-
-/// Package name must be in PascalCase and named address must be in snake_case in Move.toml
-/// Example: name = "account_extensions" -> "account_extensions" = "0x0"
+import { IObjectInfo } from "./utils.js";
+import { spawnSync } from "child_process";
 
 interface Package {
 	name: string;
@@ -30,7 +26,7 @@ export class PackagePublisher {
 		});
 
 		return new Promise((resolve) => {
-			console.log("\x1b[33m\nWARNING: Publishing packages will delete Move.lock files and previously published data will be lost.\x1b[0m");
+			console.log("\x1b[33m\nWARNING: Publishing will update Published.toml (or Pub.<env>.toml) and ./src/data/*.json files.\x1b[0m");
 			readline.question("Are you sure you want to continue? (y/n): ", (answer: string) => {
 				readline.close();
 				resolve(answer.toLowerCase() === "y");
@@ -66,7 +62,7 @@ export class PackagePublisher {
 			const dependencies: string[] = [];
 			if (parsed.dependencies) {
 				for (const [depName, depInfo] of Object.entries(parsed.dependencies)) {
-					if (typeof depInfo === 'object' && 'local' in depInfo) {
+					if (depInfo && typeof depInfo === 'object' && 'local' in depInfo) {
 						dependencies.push(depName);
 					}
 				}
@@ -104,69 +100,78 @@ export class PackagePublisher {
 		return order;
 	}
 
+	private parseJsonOutput(stdout: string, stderr: string): any {
+		const combined = [stdout, stderr].filter(Boolean).join("\n").trim();
+		if (!combined) {
+			throw new Error("Empty output from sui publish command.");
+		}
+
+		const jsonCandidate = this.extractJsonCandidate(stdout) ?? this.extractJsonCandidate(stderr);
+		if (!jsonCandidate) {
+			throw new Error(`Could not find JSON in output: ${combined}`);
+		}
+
+		return JSON.parse(jsonCandidate);
+	}
+
+	private extractJsonCandidate(output: string): string | null {
+		const text = (output || "").trim();
+		if (!text) return null;
+
+		const startIndexes: number[] = [];
+		for (let i = 0; i < text.length; i++) {
+			const char = text[i];
+			if (char === "{" || char === "[") startIndexes.push(i);
+		}
+
+		for (let i = startIndexes.length - 1; i >= 0; i--) {
+			const candidate = text.slice(startIndexes[i]);
+			try {
+				JSON.parse(candidate);
+				return candidate;
+			} catch {
+				// try next candidate
+			}
+		}
+
+		return null;
+	}
+
+	private runPublishCommand(packageInfo: Package): any {
+		const cliPath = process.env.CLI_PATH!;
+		const args = ["client", "publish", "--json", packageInfo.path];
+
+		const result = spawnSync(cliPath, args, { encoding: "utf-8" });
+		if (result.error) {
+			throw result.error;
+		}
+		if (result.status !== 0) {
+			throw new Error(result.stderr || result.stdout || "sui publish failed");
+		}
+
+		return this.parseJsonOutput(result.stdout || "", result.stderr || "");
+	}
+
 	private async publishPackage(packageInfo: Package): Promise<string> {
 		console.log(`\n📦 Publishing package: ${packageInfo.name}`);
 
-		// Delete Move.lock
-		const moveLockPath = path.join(packageInfo.path, 'Move.lock');
-		if (fs.existsSync(moveLockPath)) {
-			fs.unlinkSync(moveLockPath);
-			console.log("Deleted Move.lock file");
-		}
-
-		// Update Move.toml
-		const moveTomlPath = path.join(packageInfo.path, 'Move.toml');
-		const namedAddress = packageInfo.name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-
-		const moveTomlContent = fs.readFileSync(moveTomlPath, 'utf8');
-		const parsedToml = TOML.parse(moveTomlContent);
-
-		if (!parsedToml.addresses) {
-			throw new Error(`${packageInfo.name} Move.toml does not contain addresses section`);
-		}
-		// change named address to 0x0 before publish
-		(parsedToml.addresses as any)[namedAddress] = "0x0";
-		fs.writeFileSync(moveTomlPath, TOML.stringify(parsedToml));
-
-		// Build package
-		console.log("Building package...");
-		const { modules, dependencies } = JSON.parse(
-			execSync(
-				`${process.env.CLI_PATH!} move build --dump-bytecode-as-base64 --path ${packageInfo.path}`,
-				{ encoding: "utf-8" }
-			)
-		);
-
-		// Publish package
+		// Publish package (CLI updates Published.toml or Pub.<env>.toml)
 		console.log("Publishing...");
-		const tx = new Transaction();
-		tx.setGasBudget(1000000000);
-
-		const [upgradeCap] = tx.publish({ modules, dependencies });
-		tx.transferObjects([upgradeCap], keypair.getPublicKey().toSuiAddress());
-
-		const result = await client.signAndExecuteTransaction({
-			signer: keypair,
-			transaction: tx,
-			options: {
-				showObjectChanges: true,
-				showEffects: true,
-			},
-			requestType: "WaitForLocalExecution"
-		});
+		const result = this.runPublishCommand(packageInfo);
 
 		if (result.effects?.status?.status !== "success") {
 			throw new Error(`Publish failed: ${result.effects?.status?.error}`);
 		}
 
-		const packageId = result.objectChanges?.find((item: SuiObjectChange) => item.type === 'published')?.packageId;
+		const objectChanges = result.objectChanges || [];
+		const packageId = objectChanges.find((item: SuiObjectChange) => item.type === 'published')?.packageId;
 
 		if (!packageId) {
 			throw new Error("Could not find package ID in publish result");
 		}
 
 		// Save publish info
-		const objects: IObjectInfo[] = result.objectChanges!.map((item: SuiObjectChange) => ({
+		const objects: IObjectInfo[] = objectChanges.map((item: SuiObjectChange) => ({
 			type: item.type === 'published' ? packageInfo.name : item.objectType,
 			id: item.type === 'published' ? item.packageId : item.objectId
 		}));
@@ -176,38 +181,9 @@ export class PackagePublisher {
 			fs.mkdirSync(dataDir, { recursive: true });
 		}
 		fs.writeFileSync(
-			`${dataDir}/${namedAddress.replace("_", "-")}.json`,
+			`${dataDir}/${packageInfo.name.replace(/_/g, "-")}.json`,
 			JSON.stringify(objects, null, 2)
 		);
-
-		// Update Move.lock
-		execSync(
-			`${process.env.CLI_PATH!} move manage-package --environment "$(sui client active-env)" \
-			--network-id "$(sui client chain-identifier)" \
-			--original-id ${packageId} \
-			--latest-id ${packageId} \
-			--version-number "1" \
-			--path ${packageInfo.path}`,
-			{ encoding: "utf-8" }
-		);
-
-		// Update Move.toml files (both the package itself and its dependents)
-		for (const pkg of this.packages.values()) {
-			// Skip if it's not the package itself and doesn't depend on it
-			if (pkg.name !== packageInfo.name && !pkg.dependencies.includes(packageInfo.name)) {
-				continue;
-			}
-
-			const pkgMoveToml = path.join(pkg.path, 'Move.toml');
-			const content = fs.readFileSync(pkgMoveToml, 'utf8');
-			const parsed = TOML.parse(content);
-
-			if (parsed.addresses && typeof parsed.addresses === 'object') {
-				(parsed.addresses as Record<string, string>)[namedAddress] = packageId;
-				fs.writeFileSync(pkgMoveToml, TOML.stringify(parsed));
-				console.log(`Updated ${pkg.name}'s Move.toml with ${packageInfo.name}'s address`);
-			}
-		}
 
 		console.log("\x1b[32m" + `\n✅ Successfully published ${packageInfo.name} at: ${packageId}` + "\x1b[0m");
 		return packageId;
