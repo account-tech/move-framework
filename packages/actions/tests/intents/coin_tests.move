@@ -1,5 +1,5 @@
 #[test_only]
-module account_actions::currency_intents_tests;
+module account_actions::coin_intents_tests;
 
 // === Imports ===
 
@@ -19,8 +19,8 @@ use account_protocol::{
     metadata,
 };
 use account_actions::{
-    currency,
-    currency_intents,
+    coin as acc_coin,
+    coin_intents as acc_coin_intents,
     vesting::{Self, Vesting},
     transfer as acc_transfer,
     version,
@@ -32,7 +32,7 @@ const OWNER: address = @0xCAFE;
 
 // === Structs ===
 
-public struct CURRENCY_INTENTS_TESTS has drop {}
+public struct COIN_INTENTS_TESTS has drop {}
 public struct DummyIntent() has drop;
 
 // Define Config and Outcome directly in the file
@@ -41,7 +41,7 @@ public struct Outcome has copy, drop, store {}
 
 // === Helpers ===
 
-fun start(): (Scenario, Extensions, Account<Config>, Clock, TreasuryCap<CURRENCY_INTENTS_TESTS>, CoinMetadata<CURRENCY_INTENTS_TESTS>) {
+fun start(): (Scenario, Extensions, Account<Config>, Clock, TreasuryCap<COIN_INTENTS_TESTS>, CoinMetadata<COIN_INTENTS_TESTS>) {
     let mut scenario = ts::begin(OWNER);
     // publish package
     extensions::init_for_testing(scenario.ctx());
@@ -60,7 +60,7 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, TreasuryCap<CURRENCY
     let clock = clock::create_for_testing(scenario.ctx());
     // create TreasuryCap and CoinMetadata
     let (treasury_cap, metadata) = coin::create_currency(
-        CURRENCY_INTENTS_TESTS {}, 
+        COIN_INTENTS_TESTS {}, 
         9, 
         b"SYMBOL", 
         b"Name", 
@@ -73,7 +73,7 @@ fun start(): (Scenario, Extensions, Account<Config>, Clock, TreasuryCap<CURRENCY
     (scenario, extensions, account, clock, treasury_cap, metadata)
 }
 
-fun end(scenario: Scenario, extensions: Extensions, account: Account<Config>, clock: Clock, metadata: CoinMetadata<CURRENCY_INTENTS_TESTS>) {
+fun end(scenario: Scenario, extensions: Extensions, account: Account<Config>, clock: Clock, metadata: CoinMetadata<COIN_INTENTS_TESTS>) {
     destroy(extensions);
     destroy(account);
     destroy(clock);
@@ -88,7 +88,7 @@ fun test_request_execute_disable_rules() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
 
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());
@@ -96,7 +96,7 @@ fun test_request_execute_disable_rules() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_disable_rules<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_disable_rules<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -111,14 +111,14 @@ fun test_request_execute_disable_rules() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
-    currency_intents::execute_disable_rules<Config, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account);
+    acc_coin_intents::execute_disable_rules<Config, Outcome, COIN_INTENTS_TESTS>(&mut executable, &mut account);
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    currency::delete_disable<CURRENCY_INTENTS_TESTS>(&mut expired);
+    acc_coin::delete_disable<COIN_INTENTS_TESTS>(&mut expired);
     expired.destroy_empty();
 
-    let lock = currency::borrow_rules<Config, CURRENCY_INTENTS_TESTS>(&account);
+    let lock = acc_coin::borrow_rules<Config, COIN_INTENTS_TESTS>(&account);
     assert!(lock.can_mint() == false);
     assert!(lock.can_burn() == false);
     assert!(lock.can_update_name() == false);
@@ -133,7 +133,7 @@ fun test_request_execute_disable_rules() {
 fun test_request_execute_mint_and_keep() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
 
     let key = b"dummy".to_string();
     let addr = account.addr();
@@ -143,7 +143,7 @@ fun test_request_execute_mint_and_keep() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_transfer<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_transfer<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -154,16 +154,16 @@ fun test_request_execute_mint_and_keep() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
-    currency_intents::execute_mint_and_transfer<_, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
+    acc_coin_intents::execute_mint_and_transfer<_, Outcome, COIN_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    currency::delete_mint<CURRENCY_INTENTS_TESTS>(&mut expired);
+    acc_coin::delete_mint<COIN_INTENTS_TESTS>(&mut expired);
     acc_transfer::delete_transfer(&mut expired);
     expired.destroy_empty();
 
-    let lock = currency::borrow_rules<_, CURRENCY_INTENTS_TESTS>(&account);
-    let supply = currency::coin_type_supply<_, CURRENCY_INTENTS_TESTS>(&account);
+    let lock = acc_coin::borrow_rules<_, COIN_INTENTS_TESTS>(&account);
+    let supply = acc_coin::coin_type_supply<_, COIN_INTENTS_TESTS>(&account);
     assert!(supply == 5);
     assert!(lock.total_minted() == 5);
     assert!(lock.total_burned() == 0);
@@ -175,7 +175,7 @@ fun test_request_execute_mint_and_keep() {
 fun test_request_execute_mint_and_keep_with_max_supply() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::some(5));
+    acc_coin::lock_cap(auth, &mut account, cap, option::some(5));
 
     let key = b"dummy".to_string();
     let addr = account.addr();
@@ -185,7 +185,7 @@ fun test_request_execute_mint_and_keep_with_max_supply() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_transfer<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_transfer<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -196,11 +196,11 @@ fun test_request_execute_mint_and_keep_with_max_supply() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
-    currency_intents::execute_mint_and_transfer<_, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
+    acc_coin_intents::execute_mint_and_transfer<_, Outcome, COIN_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
     account.confirm_execution(executable);
 
-    let lock = currency::borrow_rules<_, CURRENCY_INTENTS_TESTS>(&account);
-    let supply = currency::coin_type_supply<_, CURRENCY_INTENTS_TESTS>(&account);
+    let lock = acc_coin::borrow_rules<_, COIN_INTENTS_TESTS>(&account);
+    let supply = acc_coin::coin_type_supply<_, COIN_INTENTS_TESTS>(&account);
     assert!(supply == 5);
     assert!(lock.total_minted() == 5);
     assert!(lock.total_burned() == 0);
@@ -217,10 +217,10 @@ fun test_request_execute_withdraw_and_burn() {
 
     account.keep(coin);
     scenario.next_tx(OWNER);
-    let receiving = ts::most_recent_receiving_ticket<Coin<CURRENCY_INTENTS_TESTS>>(&object::id(&account));
+    let receiving = ts::most_recent_receiving_ticket<Coin<COIN_INTENTS_TESTS>>(&object::id(&account));
 
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());
@@ -228,7 +228,7 @@ fun test_request_execute_withdraw_and_burn() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_withdraw_and_burn<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_withdraw_and_burn<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -238,16 +238,16 @@ fun test_request_execute_withdraw_and_burn() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
-    currency_intents::execute_withdraw_and_burn<_, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, vector[receiving], scenario.ctx());
+    acc_coin_intents::execute_withdraw_and_burn<_, Outcome, COIN_INTENTS_TESTS>(&mut executable, &mut account, vector[receiving], scenario.ctx());
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    owned::delete_withdraw_coin<_, CURRENCY_INTENTS_TESTS>(&mut expired, &mut account);
-    currency::delete_burn<CURRENCY_INTENTS_TESTS>(&mut expired);
+    owned::delete_withdraw_coin<_, COIN_INTENTS_TESTS>(&mut expired, &mut account);
+    acc_coin::delete_burn<COIN_INTENTS_TESTS>(&mut expired);
     expired.destroy_empty();
 
-    let lock = currency::borrow_rules<_, CURRENCY_INTENTS_TESTS>(&account);
-    let supply = currency::coin_type_supply<_, CURRENCY_INTENTS_TESTS>(&account);
+    let lock = acc_coin::borrow_rules<_, COIN_INTENTS_TESTS>(&account);
+    let supply = acc_coin::coin_type_supply<_, COIN_INTENTS_TESTS>(&account);
     assert!(supply == 0);
     assert!(lock.total_minted() == 0);
     assert!(lock.total_burned() == 5);
@@ -259,7 +259,7 @@ fun test_request_execute_withdraw_and_burn() {
 fun test_request_execute_update_metadata() {
     let (mut scenario, extensions, mut account, clock, cap, mut metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());
@@ -267,7 +267,7 @@ fun test_request_execute_update_metadata() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_update_metadata<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_update_metadata<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -280,11 +280,11 @@ fun test_request_execute_update_metadata() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
-    currency_intents::execute_update_metadata<Config, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, &mut metadata);
+    acc_coin_intents::execute_update_metadata<Config, Outcome, COIN_INTENTS_TESTS>(&mut executable, &mut account, &mut metadata);
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    currency::delete_update<CURRENCY_INTENTS_TESTS>(&mut expired);
+    acc_coin::delete_update<COIN_INTENTS_TESTS>(&mut expired);
     expired.destroy_empty();
 
     assert!(metadata.get_symbol() == b"NEW".to_ascii_string());
@@ -299,7 +299,7 @@ fun test_request_execute_update_metadata() {
 fun test_request_execute_mint_and_transfer() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());
@@ -307,7 +307,7 @@ fun test_request_execute_mint_and_transfer() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_transfer<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_transfer<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -320,25 +320,25 @@ fun test_request_execute_mint_and_transfer() {
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
     // loop over execute_mint_and_transfer to execute each action
     3u64.do!(|_| {
-        currency_intents::execute_mint_and_transfer<_, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
+        acc_coin_intents::execute_mint_and_transfer<_, Outcome, COIN_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
     });
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    currency::delete_mint<CURRENCY_INTENTS_TESTS>(&mut expired);
+    acc_coin::delete_mint<COIN_INTENTS_TESTS>(&mut expired);
     acc_transfer::delete_transfer(&mut expired);
-    currency::delete_mint<CURRENCY_INTENTS_TESTS>(&mut expired);
+    acc_coin::delete_mint<COIN_INTENTS_TESTS>(&mut expired);
     acc_transfer::delete_transfer(&mut expired);
-    currency::delete_mint<CURRENCY_INTENTS_TESTS>(&mut expired);
+    acc_coin::delete_mint<COIN_INTENTS_TESTS>(&mut expired);
     acc_transfer::delete_transfer(&mut expired);
     expired.destroy_empty();
 
     scenario.next_tx(OWNER);
-    let coin1 = scenario.take_from_address<Coin<CURRENCY_INTENTS_TESTS>>(@0x1);
+    let coin1 = scenario.take_from_address<Coin<COIN_INTENTS_TESTS>>(@0x1);
     assert!(coin1.value() == 1);
-    let coin2 = scenario.take_from_address<Coin<CURRENCY_INTENTS_TESTS>>(@0x2);
+    let coin2 = scenario.take_from_address<Coin<COIN_INTENTS_TESTS>>(@0x2);
     assert!(coin2.value() == 2);
-    let coin3 = scenario.take_from_address<Coin<CURRENCY_INTENTS_TESTS>>(@0x3);
+    let coin3 = scenario.take_from_address<Coin<COIN_INTENTS_TESTS>>(@0x3);
     assert!(coin3.value() == 3);
 
     destroy(coin1);
@@ -351,7 +351,7 @@ fun test_request_execute_mint_and_transfer() {
 fun test_request_execute_mint_and_vest() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
     let key = b"dummy".to_string();
 
     let auth = account.new_auth(version::current(), DummyIntent());
@@ -359,7 +359,7 @@ fun test_request_execute_mint_and_vest() {
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_vest<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_vest<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -372,16 +372,16 @@ fun test_request_execute_mint_and_vest() {
     );
 
     let (_, mut executable) = account.create_executable<_, Outcome, _>(key, &clock, version::current(), DummyIntent());
-    currency_intents::execute_mint_and_vest<_, Outcome, CURRENCY_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
+    acc_coin_intents::execute_mint_and_vest<_, Outcome, COIN_INTENTS_TESTS>(&mut executable, &mut account, scenario.ctx());
     account.confirm_execution(executable);
 
     let mut expired = account.destroy_empty_intent<_, Outcome>(key);
-    currency::delete_mint<CURRENCY_INTENTS_TESTS>(&mut expired);
+    acc_coin::delete_mint<COIN_INTENTS_TESTS>(&mut expired);
     vesting::delete_vest(&mut expired);
     expired.destroy_empty();
 
     scenario.next_tx(OWNER);
-    let stream = scenario.take_shared<Vesting<CURRENCY_INTENTS_TESTS>>();
+    let stream = scenario.take_shared<Vesting<COIN_INTENTS_TESTS>>();
     assert!(stream.balance_value() == 5);
     assert!(stream.last_claimed() == 1);
     assert!(stream.start_timestamp() == 1);
@@ -392,18 +392,18 @@ fun test_request_execute_mint_and_vest() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::EAmountsRecipentsNotSameLength)]
+#[test, expected_failure(abort_code = acc_coin_intents::EAmountsRecipentsNotSameLength)]
 fun test_error_request_mint_and_transfer_not_same_length() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let outcome = Outcome {};
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_transfer<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_transfer<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -416,18 +416,18 @@ fun test_error_request_mint_and_transfer_not_same_length() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::EMaxSupply)]
+#[test, expected_failure(abort_code = acc_coin_intents::EMaxSupply)]
 fun test_error_request_mint_and_transfer_mint_too_many() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::some(4));
+    acc_coin::lock_cap(auth, &mut account, cap, option::some(4));
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let outcome = Outcome {};
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_transfer<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_transfer<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -440,19 +440,19 @@ fun test_error_request_mint_and_transfer_mint_too_many() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::ECannotUpdateSymbol)]
+#[test, expected_failure(abort_code = acc_coin_intents::ECannotUpdateSymbol)]
 fun test_error_new_update_symbol_disabled() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
 
-    currency::toggle_can_update_symbol<_, CURRENCY_INTENTS_TESTS>(&mut account);
+    acc_coin::toggle_can_update_symbol<_, COIN_INTENTS_TESTS>(&mut account);
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_update_metadata<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_update_metadata<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -466,19 +466,19 @@ fun test_error_new_update_symbol_disabled() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::ECannotUpdateName)]
+#[test, expected_failure(abort_code = acc_coin_intents::ECannotUpdateName)]
 fun test_error_new_update_name_disabled() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
 
-    currency::toggle_can_update_name<_, CURRENCY_INTENTS_TESTS>(&mut account);
+    acc_coin::toggle_can_update_name<_, COIN_INTENTS_TESTS>(&mut account);
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_update_metadata<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_update_metadata<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -492,19 +492,19 @@ fun test_error_new_update_name_disabled() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::ECannotUpdateDescription)]
+#[test, expected_failure(abort_code = acc_coin_intents::ECannotUpdateDescription)]
 fun test_error_new_update_description_disabled() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
 
-    currency::toggle_can_update_description<_, CURRENCY_INTENTS_TESTS>(&mut account);
+    acc_coin::toggle_can_update_description<_, COIN_INTENTS_TESTS>(&mut account);
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_update_metadata<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_update_metadata<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -518,19 +518,19 @@ fun test_error_new_update_description_disabled() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::ECannotUpdateIcon)]
+#[test, expected_failure(abort_code = acc_coin_intents::ECannotUpdateIcon)]
 fun test_error_new_update_icon_disabled() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
 
-    currency::toggle_can_update_icon<_, CURRENCY_INTENTS_TESTS>(&mut account);
+    acc_coin::toggle_can_update_icon<_, COIN_INTENTS_TESTS>(&mut account);
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_update_metadata<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_update_metadata<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -545,19 +545,19 @@ fun test_error_new_update_icon_disabled() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::EBurnDisabled)]
+#[test, expected_failure(abort_code = acc_coin_intents::EBurnDisabled)]
 fun test_error_new_burn_disabled() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());    
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());    
 
-    currency::toggle_can_burn<_, CURRENCY_INTENTS_TESTS>(&mut account);
+    acc_coin::toggle_can_burn<_, COIN_INTENTS_TESTS>(&mut account);
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let params = intents::new_params(   
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_withdraw_and_burn<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_withdraw_and_burn<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -569,19 +569,19 @@ fun test_error_new_burn_disabled() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::EMintDisabled)]
+#[test, expected_failure(abort_code = acc_coin_intents::EMintDisabled)]
 fun test_error_new_mint_disabled() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::none());
+    acc_coin::lock_cap(auth, &mut account, cap, option::none());
 
-    currency::toggle_can_mint<_, CURRENCY_INTENTS_TESTS>(&mut account);
+    acc_coin::toggle_can_mint<_, COIN_INTENTS_TESTS>(&mut account);
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_transfer<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_transfer<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
@@ -594,17 +594,17 @@ fun test_error_new_mint_disabled() {
     end(scenario, extensions, account, clock, metadata);
 }
 
-#[test, expected_failure(abort_code = currency_intents::EMaxSupply)]
+#[test, expected_failure(abort_code = acc_coin_intents::EMaxSupply)]
 fun test_error_new_mint_too_many() {
     let (mut scenario, extensions, mut account, clock, cap, metadata) = start();
     let auth = account.new_auth(version::current(), DummyIntent());
-    currency::lock_cap(auth, &mut account, cap, option::some(4));
+    acc_coin::lock_cap(auth, &mut account, cap, option::some(4));
 
     let auth = account.new_auth(version::current(), DummyIntent());
     let params = intents::new_params(
         b"dummy".to_string(), b"".to_string(), vector[0], 1, &clock, scenario.ctx()
     );
-    currency_intents::request_mint_and_transfer<Config, Outcome, CURRENCY_INTENTS_TESTS>(
+    acc_coin_intents::request_mint_and_transfer<Config, Outcome, COIN_INTENTS_TESTS>(
         auth, 
         &mut account, 
         params,
