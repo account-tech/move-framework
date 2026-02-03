@@ -137,6 +137,24 @@ export class PackagePublisher {
 		return null;
 	}
 
+	private isVersionMismatchWarning(output: string): boolean {
+		const text = (output || "").toLowerCase();
+		return text.includes("client/server api version mismatch");
+	}
+
+	private removePreviousPublicationFiles(packageInfo: Package): void {
+		const entries = fs.readdirSync(packageInfo.path, { withFileTypes: true });
+		for (const entry of entries) {
+			if (!entry.isFile()) continue;
+			const name = entry.name;
+			const isPublished = name === "Published.toml";
+			const isEnvPublished = name.startsWith("Pub.") && name.endsWith(".toml");
+			if (isPublished || isEnvPublished) {
+				fs.rmSync(path.join(packageInfo.path, name));
+			}
+		}
+	}
+
 	private runPublishCommand(packageInfo: Package): any {
 		const cliPath = process.env.CLI_PATH!;
 		const args = ["client", "publish", "--json", packageInfo.path];
@@ -146,7 +164,13 @@ export class PackagePublisher {
 			throw result.error;
 		}
 		if (result.status !== 0) {
-			throw new Error(result.stderr || result.stdout || "sui publish failed");
+			const hasJsonOutput = Boolean(this.extractJsonCandidate(result.stdout || ""));
+			const isVersionWarning = this.isVersionMismatchWarning(result.stderr || "");
+			if (isVersionWarning && hasJsonOutput) {
+				console.warn("\x1b[33m" + "⚠️  Client/server API version mismatch warning ignored for publish." + "\x1b[0m");
+			} else {
+				throw new Error(result.stderr || result.stdout || "sui publish failed");
+			}
 		}
 
 		return this.parseJsonOutput(result.stdout || "", result.stderr || "");
@@ -156,6 +180,8 @@ export class PackagePublisher {
 		console.log(`\n📦 Publishing package: ${packageInfo.name}`);
 
 		// Publish package (CLI updates Published.toml or Pub.<env>.toml)
+		console.log("Cleaning previous publication files...");
+		this.removePreviousPublicationFiles(packageInfo);
 		console.log("Publishing...");
 		const result = this.runPublishCommand(packageInfo);
 

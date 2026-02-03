@@ -4,19 +4,19 @@
     "id": "0x0038c5a7dc8a89df8449775982973fbd31fa0e3892e60b740dd8bcb3dc51c613"
   },
   {
-    "type": "account_extensions",
-    "id": "0x1334498bc69f77bb1fbb327f99cc932dc1f0fc38f28f423385e23d499779e9c1"
+    "type": "0x9c6eec5fccb0cacad30cd6969591fa2071eec8135172a4029480465ad30be6ee::extensions::Extensions",
+    "id": "0x15f3ae61da1bad2c634c6325829a754bf4a898ff6c59c560f2be444d786512e3"
   },
   {
     "type": "0x2::package::UpgradeCap",
-    "id": "0x717f39a3099ff496544dfc9914affc064a0cc811bad7d69e930ec347204cccef"
+    "id": "0x71c5ebe7e3b25d9220d6cf0ed474e5f069e017170e817d0e3500441fa3b62c2e"
   },
   {
-    "type": "0x1334498bc69f77bb1fbb327f99cc932dc1f0fc38f28f423385e23d499779e9c1::extensions::AdminCap",
-    "id": "0x9f6c62e2342dff8daeb704c8c6f2563e0c4427a2eb38244ea7192c2e5f8fdc15"
+    "type": "account_extensions",
+    "id": "0x9c6eec5fccb0cacad30cd6969591fa2071eec8135172a4029480465ad30be6ee"
   },
   {
-    "type": "0x1334498bc69f77bb1fbb327f99cc932dc1f0fc38f28f423385e23d499779e9c1::extensions::Extensions",
-    "id": "0xe4d205b8f3369805a20d572d5665ced03486697a8fa20edc3c4d0792f970c37e"
+    "type": "0x9c6eec5fccb0cacad30cd6969591fa2071eec8135172a4029480465ad30be6ee::extensions::AdminCap",
+    "id": "0xd950609cc08536f15824cab7aafe146f94a8dac35c3b9a44c9cb983c2c1a26e0"
   }
 ]
