@@ -303,12 +303,12 @@ fun test_accept_invite() {
     let invite = Invite {
         id: object::new(scenario.ctx()),
         account_addr: @0xACC,
-        account_type: b"0x0::config::Config".to_string(),
+        account_type: "0x0::config::Config",
     };
 
     accept_invite(&mut user, invite);
-    assert!(user.accounts.contains(&b"0x0::config::Config".to_string()));
-    assert!(user.accounts[&b"0x0::config::Config".to_string()].contains(&@0xACC));
+    assert!(user.accounts.contains(&"0x0::config::Config"));
+    assert!(user.accounts[&"0x0::config::Config"].contains(&@0xACC));
 
     destroy_for_testing(user);
     scenario.end();
@@ -343,11 +343,11 @@ fun test_refuse_invite() {
     let invite = Invite {
         id: object::new(scenario.ctx()),
         account_addr: @0xACC,
-        account_type: b"0x0::config::Config".to_string(),
+        account_type: "0x0::config::Config",
     };
 
     refuse_invite(invite);
-    assert!(!user.accounts.contains(&b"0x0::config::Config".to_string()));
+    assert!(!user.accounts.contains(&"0x0::config::Config"));
 
     destroy_for_testing(user);
     scenario.end();

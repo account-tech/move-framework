@@ -50,7 +50,7 @@ public fun request_final_upgrade<Config, Outcome: store>(
     account.build_intent!(
         params,
         outcome, 
-        b"".to_string(),
+        "",
         version::current(),
         FinalUpgradeIntent(),
         ctx,

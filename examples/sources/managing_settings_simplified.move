@@ -69,7 +69,7 @@ public fun request_update_fee<Config, Outcome: store>(
     account.build_intent!(
         params,
         outcome, 
-        b"".to_string(),
+        "",
         version::current(),
         UpdateFeeIntent(),
         ctx,

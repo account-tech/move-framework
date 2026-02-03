@@ -174,7 +174,7 @@ public fun get_package_name<Config>(
     package_addr: address
 ): String {
     let index: &UpgradeIndex = account.borrow_managed_data(UpgradeIndexKey(), version::current());
-    let (mut i, mut package_name) = (0, b"".to_string());
+    let (mut i, mut package_name) = (0, "");
     loop {
         let (name, addr) = index.packages_info.get_entry_by_idx(i);
         package_name = *name;

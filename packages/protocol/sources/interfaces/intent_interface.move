@@ -36,7 +36,7 @@ use account_protocol::{
 ///     account.build_intent!(
 ///         params,
 ///         outcome, 
-///         b"".to_string(),
+///         "",
 ///         version::current(),
 ///         IntentWitness(),   
 ///         ctx,

@@ -198,9 +198,9 @@ public fun update_for_testing(extensions: &mut Extensions, name: String, addr: a
 public fun new_for_testing_with_addrs(addr1: address, addr2: address, addr3: address, ctx: &mut TxContext): Extensions {
     let mut extensions = new_for_testing(ctx);
 
-    extensions.add_for_testing(b"account_protocol".to_string(), addr1, 1);
-    extensions.add_for_testing(b"AccountConfig".to_string(), addr2, 1);
-    extensions.add_for_testing(b"account_actions".to_string(), addr3, 1);
+    extensions.add_for_testing("account_protocol", addr1, 1);
+    extensions.add_for_testing("account_config", addr2, 1);
+    extensions.add_for_testing("account_actions", addr3, 1);
 
     extensions
 }
@@ -239,16 +239,16 @@ fun test_getters() {
     let extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
 
     // assertions
-    assert!(extensions.is_extension(b"account_protocol".to_string(), @0x0, 1));
-    assert!(extensions.is_extension(b"AccountConfig".to_string(), @0x1, 1));
+    assert!(extensions.is_extension("account_protocol", @0x0, 1));
+    assert!(extensions.is_extension("account_config", @0x1, 1));
 
     assert!(extensions.length() == 3);
-    assert!(extensions.by_name(b"account_protocol".to_string())[0].addr() == @0x0);
-    assert!(extensions.by_name(b"account_protocol".to_string())[0].version() == 1);
-    assert!(extensions.by_name(b"AccountConfig".to_string())[0].addr() == @0x1);
-    assert!(extensions.by_name(b"AccountConfig".to_string())[0].version() == 1);
-    assert!(extensions.by_name(b"account_actions".to_string())[0].addr() == @0x2);
-    assert!(extensions.by_name(b"account_actions".to_string())[0].version() == 1);
+    assert!(extensions.by_name("account_protocol")[0].addr() == @0x0);
+    assert!(extensions.by_name("account_protocol")[0].version() == 1);
+    assert!(extensions.by_name("account_config")[0].addr() == @0x1);
+    assert!(extensions.by_name("account_config")[0].version() == 1);
+    assert!(extensions.by_name("account_actions")[0].addr() == @0x2);
+    assert!(extensions.by_name("account_actions")[0].version() == 1);
 
     destroy(extensions);
 }
@@ -258,26 +258,26 @@ fun test_get_latest_for_name() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
 
-    let (addr, version) = extensions.get_latest_for_name(b"account_protocol".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_protocol");
     assert!(addr == @0x0);
     assert!(version == 1);
-    let (addr, version) = extensions.get_latest_for_name(b"AccountConfig".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_config");
     assert!(addr == @0x1);
     assert!(version == 1);
-    let (addr, version) = extensions.get_latest_for_name(b"account_actions".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_actions");
     assert!(addr == @0x2);
     assert!(version == 1);
     // update
-    extensions.update(&cap, b"AccountConfig".to_string(), @0x11, 2);
-    extensions.update(&cap, b"account_actions".to_string(), @0x21, 2);
-    extensions.update(&cap, b"account_actions".to_string(), @0x22, 3);
-    let (addr, version) = extensions.get_latest_for_name(b"account_protocol".to_string());
+    extensions.update(&cap, "account_config", @0x11, 2);
+    extensions.update(&cap, "account_actions", @0x21, 2);
+    extensions.update(&cap, "account_actions", @0x22, 3);
+    let (addr, version) = extensions.get_latest_for_name("account_protocol");
     assert!(addr == @0x0);
     assert!(version == 1);
-    let (addr, version) = extensions.get_latest_for_name(b"AccountConfig".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_config");
     assert!(addr == @0x11);
     assert!(version == 2);
-    let (addr, version) = extensions.get_latest_for_name(b"account_actions".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_actions");
     assert!(addr == @0x22);
     assert!(version == 3);
 
@@ -290,32 +290,32 @@ fun test_is_extension() {
     let extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
 
-    let (addr, version) = extensions.get_latest_for_name(b"account_protocol".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_protocol");
     assert!(addr == @0x0);
     assert!(version == 1);
-    let (addr, version) = extensions.get_latest_for_name(b"AccountConfig".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_config");
     assert!(addr == @0x1);
     assert!(version == 1);
-    let (addr, version) = extensions.get_latest_for_name(b"account_actions".to_string());
+    let (addr, version) = extensions.get_latest_for_name("account_actions");
     assert!(addr == @0x2);
     assert!(version == 1);
 
     // correct extensions
-    assert!(extensions.is_extension(b"account_protocol".to_string(), @0x0, 1));
-    assert!(extensions.is_extension(b"AccountConfig".to_string(), @0x1, 1));
-    assert!(extensions.is_extension(b"account_actions".to_string(), @0x2, 1));
+    assert!(extensions.is_extension("account_protocol", @0x0, 1));
+    assert!(extensions.is_extension("account_config", @0x1, 1));
+    assert!(extensions.is_extension("account_actions", @0x2, 1));
     // incorrect names
-    assert!(!extensions.is_extension(b"AccountProtoco".to_string(), @0x0, 1));
-    assert!(!extensions.is_extension(b"AccountConfi".to_string(), @0x1, 1));
-    assert!(!extensions.is_extension(b"AccountAction".to_string(), @0x2, 1));
+    assert!(!extensions.is_extension("account_protoco", @0x0, 1));
+    assert!(!extensions.is_extension("account_confi", @0x1, 1));
+    assert!(!extensions.is_extension("account_actio", @0x2, 1));
     // incorrect addresses
-    assert!(!extensions.is_extension(b"account_protocol".to_string(), @0x1, 1));
-    assert!(!extensions.is_extension(b"AccountConfig".to_string(), @0x0, 1));
-    assert!(!extensions.is_extension(b"account_actions".to_string(), @0x0, 1));
+    assert!(!extensions.is_extension("account_protocol", @0x1, 1));
+    assert!(!extensions.is_extension("account_config", @0x0, 1));
+    assert!(!extensions.is_extension("account_actions", @0x0, 1));
     // incorrect versions
-    assert!(!extensions.is_extension(b"account_protocol".to_string(), @0x0, 2));
-    assert!(!extensions.is_extension(b"AccountConfig".to_string(), @0x1, 2));
-    assert!(!extensions.is_extension(b"account_actions".to_string(), @0x2, 2));
+    assert!(!extensions.is_extension("account_protocol", @0x0, 2));
+    assert!(!extensions.is_extension("account_config", @0x1, 2));
+    assert!(!extensions.is_extension("account_actions", @0x2, 2));
 
     destroy(extensions);
     destroy(cap);
@@ -327,13 +327,13 @@ fun test_add_deps() {
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
 
     // add extension
-    extensions.add(&cap, b"A".to_string(), @0xA, 1);
-    extensions.add(&cap, b"B".to_string(), @0xB, 1);
-    extensions.add(&cap, b"C".to_string(), @0xC, 1);
+    extensions.add(&cap, "A", @0xA, 1);
+    extensions.add(&cap, "B", @0xB, 1);
+    extensions.add(&cap, "C", @0xC, 1);
     // assertions
-    assert!(extensions.is_extension(b"A".to_string(), @0xA, 1));
-    assert!(extensions.is_extension(b"B".to_string(), @0xB, 1));
-    assert!(extensions.is_extension(b"C".to_string(), @0xC, 1));
+    assert!(extensions.is_extension("A", @0xA, 1));
+    assert!(extensions.is_extension("B", @0xB, 1));
+    assert!(extensions.is_extension("C", @0xC, 1));
 
     destroy(extensions);
     destroy(cap);
@@ -345,28 +345,28 @@ fun test_update_deps() {
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
 
     // add extension (checked above)
-    extensions.add(&cap, b"A".to_string(), @0xA, 1);
-    extensions.add(&cap, b"B".to_string(), @0xB, 1);
-    extensions.add(&cap, b"C".to_string(), @0xC, 1);
+    extensions.add(&cap, "A", @0xA, 1);
+    extensions.add(&cap, "B", @0xB, 1);
+    extensions.add(&cap, "C", @0xC, 1);
     // update deps
-    extensions.update(&cap, b"B".to_string(), @0x1B, 2);
-    extensions.update(&cap, b"C".to_string(), @0x1C, 2);
-    extensions.update(&cap, b"C".to_string(), @0x2C, 3);
+    extensions.update(&cap, "B", @0x1B, 2);
+    extensions.update(&cap, "C", @0x1C, 2);
+    extensions.update(&cap, "C", @0x2C, 3);
     // assertions
-    assert!(extensions.by_name(b"A".to_string())[0].addr() == @0xA);
-    assert!(extensions.by_name(b"A".to_string())[0].version() == 1);
-    assert!(extensions.by_name(b"B".to_string())[1].addr() == @0x1B);
-    assert!(extensions.by_name(b"B".to_string())[1].version() == 2);
-    assert!(extensions.by_name(b"C".to_string())[2].addr() == @0x2C);
-    assert!(extensions.by_name(b"C".to_string())[2].version() == 3);
+    assert!(extensions.by_name("A")[0].addr() == @0xA);
+    assert!(extensions.by_name("A")[0].version() == 1);
+    assert!(extensions.by_name("B")[1].addr() == @0x1B);
+    assert!(extensions.by_name("B")[1].version() == 2);
+    assert!(extensions.by_name("C")[2].addr() == @0x2C);
+    assert!(extensions.by_name("C")[2].version() == 3);
     // verify core deps didn't change    
     assert!(extensions.length() == 6);
-    assert!(extensions.by_name(b"account_protocol".to_string())[0].addr() == @0x0);
-    assert!(extensions.by_name(b"account_protocol".to_string())[0].version() == 1);
-    assert!(extensions.by_name(b"AccountConfig".to_string())[0].addr() == @0x1);
-    assert!(extensions.by_name(b"AccountConfig".to_string())[0].version() == 1);
-    assert!(extensions.by_name(b"account_actions".to_string())[0].addr() == @0x2);
-    assert!(extensions.by_name(b"account_actions".to_string())[0].version() == 1);
+    assert!(extensions.by_name("account_protocol")[0].addr() == @0x0);
+    assert!(extensions.by_name("account_protocol")[0].version() == 1);
+    assert!(extensions.by_name("account_config")[0].addr() == @0x1);
+    assert!(extensions.by_name("account_config")[0].version() == 1);
+    assert!(extensions.by_name("account_actions")[0].addr() == @0x2);
+    assert!(extensions.by_name("account_actions")[0].version() == 1);
 
     destroy(extensions);
     destroy(cap);
@@ -378,24 +378,24 @@ fun test_remove_deps() {
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
 
     // add extension (checked above)
-    extensions.add(&cap, b"A".to_string(), @0xA, 1);
-    extensions.add(&cap, b"B".to_string(), @0xB, 1);
-    extensions.add(&cap, b"C".to_string(), @0xC, 1);
+    extensions.add(&cap, "A", @0xA, 1);
+    extensions.add(&cap, "B", @0xB, 1);
+    extensions.add(&cap, "C", @0xC, 1);
     // update deps
-    extensions.update(&cap, b"B".to_string(), @0x1B, 2);
-    extensions.update(&cap, b"C".to_string(), @0x1C, 2);
-    extensions.update(&cap, b"C".to_string(), @0x2C, 3);
+    extensions.update(&cap, "B", @0x1B, 2);
+    extensions.update(&cap, "C", @0x1C, 2);
+    extensions.update(&cap, "C", @0x2C, 3);
     // remove deps
-    extensions.remove(&cap, b"A".to_string());
-    extensions.remove(&cap, b"B".to_string());
-    extensions.remove(&cap, b"C".to_string());
+    extensions.remove(&cap, "A");
+    extensions.remove(&cap, "B");
+    extensions.remove(&cap, "C");
     // assertions
-    assert!(!extensions.is_extension(b"A".to_string(), @0xA, 1));
-    assert!(!extensions.is_extension(b"B".to_string(), @0xB, 1));
-    assert!(!extensions.is_extension(b"B".to_string(), @0x1B, 2));
-    assert!(!extensions.is_extension(b"C".to_string(), @0xC, 1));
-    assert!(!extensions.is_extension(b"C".to_string(), @0x1C, 2));
-    assert!(!extensions.is_extension(b"C".to_string(), @0x2C, 3));
+    assert!(!extensions.is_extension("A", @0xA, 1));
+    assert!(!extensions.is_extension("B", @0xB, 1));
+    assert!(!extensions.is_extension("B", @0x1B, 2));
+    assert!(!extensions.is_extension("C", @0xC, 1));
+    assert!(!extensions.is_extension("C", @0x1C, 2));
+    assert!(!extensions.is_extension("C", @0x2C, 3));
 
     destroy(extensions);
     destroy(cap);
@@ -418,7 +418,7 @@ fun test_new_admin() {
 fun test_error_add_extension_name_already_exists() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
-    extensions.add(&cap, b"account_protocol".to_string(), @0xA, 1);
+    extensions.add(&cap, "account_protocol", @0xA, 1);
     destroy(extensions);
     destroy(cap);
 }
@@ -427,7 +427,7 @@ fun test_error_add_extension_name_already_exists() {
 fun test_error_add_extension_address_already_exists() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
-    extensions.add(&cap, b"A".to_string(), @0x0, 1);
+    extensions.add(&cap, "A", @0x0, 1);
     destroy(extensions);
     destroy(cap);
 }
@@ -436,7 +436,7 @@ fun test_error_add_extension_address_already_exists() {
 fun test_error_update_not_extension() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
-    extensions.update(&cap, b"A".to_string(), @0x0, 1);
+    extensions.update(&cap, "A", @0x0, 1);
     destroy(extensions);
     destroy(cap);
 }
@@ -445,8 +445,8 @@ fun test_error_update_not_extension() {
 fun test_error_update_same_address() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
-    extensions.add(&cap, b"A".to_string(), @0xA, 1);
-    extensions.update(&cap, b"A".to_string(), @0xA, 2);
+    extensions.add(&cap, "A", @0xA, 1);
+    extensions.update(&cap, "A", @0xA, 2);
     destroy(extensions);
     destroy(cap);
 }
@@ -455,7 +455,7 @@ fun test_error_update_same_address() {
 fun test_error_remove_not_extension() {
     let mut extensions = new_for_testing_with_addrs(@0x0, @0x1, @0x2, &mut tx_context::dummy());
     let cap = AdminCap { id: object::new(&mut tx_context::dummy()) };
-    extensions.remove(&cap, b"A".to_string());
+    extensions.remove(&cap, "A");
     destroy(extensions);
     destroy(cap);
 }

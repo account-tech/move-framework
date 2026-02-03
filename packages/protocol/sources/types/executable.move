@@ -90,8 +90,8 @@ fun test_new_executable() {
     let clock = clock::create_for_testing(ctx);
     
     let params = intents::new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -101,7 +101,7 @@ fun test_new_executable() {
     let intent = intents::new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -110,7 +110,7 @@ fun test_new_executable() {
     let executable = new(intent);
     
     assert_eq!(action_idx(&executable), 0);
-    assert_eq!(intent(&executable).key(), b"test_key".to_string());
+    assert_eq!(intent(&executable).key(), "test_key");
     
     destroy_for_testing(executable);
     destroy_for_testing(clock);
@@ -122,8 +122,8 @@ fun test_next_action() {
     let clock = clock::create_for_testing(ctx);
     
     let params = intents::new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -133,7 +133,7 @@ fun test_next_action() {
     let mut intent = intents::new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -162,8 +162,8 @@ fun test_contains_action() {
     let clock = clock::create_for_testing(ctx);
     
     let params = intents::new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -173,7 +173,7 @@ fun test_contains_action() {
     let mut intent = intents::new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -195,8 +195,8 @@ fun test_contains_action_empty() {
     let clock = clock::create_for_testing(ctx);
     
     let params = intents::new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -206,7 +206,7 @@ fun test_contains_action_empty() {
     let intent = intents::new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -226,8 +226,8 @@ fun test_destroy_executable() {
     let clock = clock::create_for_testing(ctx);
     
     let params = intents::new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -237,7 +237,7 @@ fun test_destroy_executable() {
     let intent = intents::new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -246,8 +246,8 @@ fun test_destroy_executable() {
     let executable = new(intent);
     let recovered_intent = destroy(executable);
     
-    assert_eq!(recovered_intent.key(), b"test_key".to_string());
-    assert_eq!(recovered_intent.description(), b"test_description".to_string());
+    assert_eq!(recovered_intent.key(), "test_key");
+    assert_eq!(recovered_intent.description(), "test_description");
     
     destroy_for_testing(recovered_intent);
     destroy_for_testing(clock);
@@ -259,8 +259,8 @@ fun test_executable_with_multiple_actions() {
     let clock = clock::create_for_testing(ctx);
     
     let params = intents::new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -270,7 +270,7 @@ fun test_executable_with_multiple_actions() {
     let mut intent = intents::new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -303,8 +303,8 @@ fun test_intent_access() {
     let clock = clock::create_for_testing(ctx);
     
     let params = intents::new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -314,7 +314,7 @@ fun test_intent_access() {
     let intent = intents::new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -323,8 +323,8 @@ fun test_intent_access() {
     let executable = new(intent);
     let intent_ref = intent(&executable);
     
-    assert_eq!(intent_ref.key(), b"test_key".to_string());
-    assert_eq!(intent_ref.description(), b"test_description".to_string());
+    assert_eq!(intent_ref.key(), "test_key");
+    assert_eq!(intent_ref.description(), "test_description");
     assert_eq!(intent_ref.account(), @0xCAFE);
     let mut role = @account_protocol.to_string();
     role.append_utf8(b"::executable");

@@ -111,7 +111,7 @@ public fun request_config_deps<Config, Outcome: store>(
     account.build_intent!(
         params,
         outcome, 
-        b"".to_string(),
+        "",
         version::current(),
         ConfigDepsIntent(),   
         ctx,
@@ -154,7 +154,7 @@ public fun request_toggle_unverified_allowed<Config, Outcome: store>(
     account.build_intent!(
         params,
         outcome,
-        b"".to_string(),
+        "",
         version::current(),
         ToggleUnverifiedAllowedIntent(),
         ctx,

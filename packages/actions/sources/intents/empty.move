@@ -35,7 +35,7 @@ public fun request_empty<Config, Outcome: store>(
     account.build_intent!(
         params,
         outcome, 
-        b"".to_string(),
+        "",
         version::current(),
         EmptyIntent(),
         ctx,

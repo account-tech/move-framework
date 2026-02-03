@@ -417,16 +417,16 @@ fun test_new_params() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
         ctx
     );
     
-    assert_eq!(params.key(), b"test_key".to_string());
-    assert_eq!(params.description(), b"test_description".to_string());
+    assert_eq!(params.key(), "test_key");
+    assert_eq!(params.description(), "test_description");
     assert_eq!(params.execution_times(), vector[1000]);
     assert_eq!(params.expiration_time(), 2000);
     assert_eq!(params.creation_time(), 0);
@@ -441,7 +441,7 @@ fun test_new_params_with_rand_key() {
     let clock = clock::create_for_testing(ctx);
     
     let (params, key) = new_params_with_rand_key(
-        b"test_description".to_string(),
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -449,7 +449,7 @@ fun test_new_params_with_rand_key() {
     );
     
     assert_eq!(params.key(), key);
-    assert_eq!(params.description(), b"test_description".to_string());
+    assert_eq!(params.description(), "test_description");
     assert_eq!(params.execution_times(), vector[1000]);
     assert_eq!(params.expiration_time(), 2000);
     
@@ -463,8 +463,8 @@ fun test_new_params_empty_execution_times() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[],
         2000,
         &clock,
@@ -480,8 +480,8 @@ fun test_new_params_not_ascending_execution_times() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[2000, 1000],
         3000,
         &clock,
@@ -497,8 +497,8 @@ fun test_new_intent() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -508,14 +508,14 @@ fun test_new_intent() {
     let intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
     );
     
-    assert_eq!(intent.key(), b"test_key".to_string());
-    assert_eq!(intent.description(), b"test_description".to_string());
+    assert_eq!(intent.key(), "test_key");
+    assert_eq!(intent.description(), "test_description");
     assert_eq!(intent.account(), @0xCAFE);
     assert_eq!(intent.creation_time(), clock.timestamp_ms());
     assert_eq!(intent.execution_times(), vector[1000]);
@@ -532,8 +532,8 @@ fun test_add_action() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -543,7 +543,7 @@ fun test_add_action() {
     let mut intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -566,8 +566,8 @@ fun test_remove_action() {
     let mut intents = empty(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -577,7 +577,7 @@ fun test_remove_action() {
     let mut intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -587,7 +587,7 @@ fun test_remove_action() {
     add_action(&mut intent, TestAction {}, TestIntentWitness());
     add_intent(&mut intents, intent);
     
-    let mut expired = intents.destroy_intent<TestOutcome>(b"test_key".to_string());
+    let mut expired = intents.destroy_intent<TestOutcome>("test_key");
     
     let action1: TestAction = remove_action(&mut expired);
     let action2: TestAction = remove_action(&mut expired);
@@ -608,7 +608,7 @@ fun test_empty_intents() {
     let intents = empty(ctx);
     
     assert_eq!(length(&intents), 0);
-    assert!(!contains(&intents, b"test_key".to_string()));
+    assert!(!contains(&intents, "test_key"));
     
     destroy(intents);
 }
@@ -620,8 +620,8 @@ fun test_add_and_remove_intent() {
     let mut intents = empty(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -631,7 +631,7 @@ fun test_add_and_remove_intent() {
     let intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -639,11 +639,11 @@ fun test_add_and_remove_intent() {
     
     add_intent(&mut intents, intent);
     assert_eq!(length(&intents), 1);
-    assert!(contains(&intents, b"test_key".to_string()));
+    assert!(contains(&intents, "test_key"));
     
-    let removed_intent = remove_intent<TestOutcome>(&mut intents, b"test_key".to_string());
+    let removed_intent = remove_intent<TestOutcome>(&mut intents, "test_key");
     assert_eq!(length(&intents), 0);
-    assert!(!contains(&intents, b"test_key".to_string()));
+    assert!(!contains(&intents, "test_key"));
     
     destroy(removed_intent);
     destroy(intents);
@@ -657,8 +657,8 @@ fun test_add_duplicate_intent() {
     let mut intents = empty(ctx);
     
     let params1 = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -666,8 +666,8 @@ fun test_add_duplicate_intent() {
     );
     
     let params2 = new_params(
-        b"test_key".to_string(),
-        b"test_description2".to_string(),
+        "test_key",
+        "test_description2",
         vector[1000],
         2000,
         &clock,
@@ -677,7 +677,7 @@ fun test_add_duplicate_intent() {
     let intent1 = new_intent(
         params1,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -686,7 +686,7 @@ fun test_add_duplicate_intent() {
     let intent2 = new_intent(
         params2,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -704,7 +704,7 @@ fun test_remove_nonexistent_intent() {
     let ctx = &mut tx_context::dummy();
     let mut intents = empty(ctx);
     
-    let removed_intent = remove_intent<TestOutcome>(&mut intents, b"nonexistent_key".to_string());
+    let removed_intent = remove_intent<TestOutcome>(&mut intents, "nonexistent_key");
     
     destroy(removed_intent);
     destroy(intents);
@@ -716,8 +716,8 @@ fun test_pop_front_execution_time() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000, 2000, 3000],
         4000,
         &clock,
@@ -727,7 +727,7 @@ fun test_pop_front_execution_time() {
     let mut intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -753,8 +753,8 @@ fun test_assert_is_account() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -764,7 +764,7 @@ fun test_assert_is_account() {
     let intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -783,8 +783,8 @@ fun test_assert_is_account_wrong() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -794,7 +794,7 @@ fun test_assert_is_account_wrong() {
     let intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -812,8 +812,8 @@ fun test_assert_is_witness() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -823,7 +823,7 @@ fun test_assert_is_witness() {
     let intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -842,8 +842,8 @@ fun test_assert_is_witness_wrong() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -853,7 +853,7 @@ fun test_assert_is_witness_wrong() {
     let intent = new_intent(
         params,
         TestOutcome {},
-        b"test_role".to_string(),
+        "test_role",
         @0xCAFE,
         TestIntentWitness(),
         ctx
@@ -871,8 +871,8 @@ fun test_assert_single_execution() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000],
         2000,
         &clock,
@@ -892,8 +892,8 @@ fun test_assert_single_execution_multiple() {
     let clock = clock::create_for_testing(ctx);
     
     let params = new_params(
-        b"test_key".to_string(),
-        b"test_description".to_string(),
+        "test_key",
+        "test_description",
         vector[1000, 2000],
         3000,
         &clock,
